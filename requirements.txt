@@ -4,3 +4,5 @@ python-dotenv>=1.0.0
 python-telegram-bot[job-queue]>=22.0
 apscheduler>=3.10
 tzlocal>=3.0
+cryptography>=42.0
+pytest>=8.0

@@ -35,5 +35,9 @@ Thumbs.db
 !requirements*.json
 !package*.json
 
-# Notificaciones enviadas (deduplicación local)
+# Notificaciones enviadas (deduplicación local por usuario)
 .sent_notifications.json
+.sent_notifications_*.json
+
+# Clave de cifrado local (si AKUMAJA_ENCRYPTION_KEY no está definida)
+akumaja.key

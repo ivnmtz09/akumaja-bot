@@ -21,23 +21,36 @@ PASSWORD = os.getenv("MOODLE_PASSWORD")
 SENT_NOTIFICATIONS_FILE = Path(__file__).parent / ".sent_notifications.json"
 
 
-def load_sent_notifications():
-    if SENT_NOTIFICATIONS_FILE.exists():
+def _sent_notifications_file(user_id=None):
+    """Archivo de deduplicación por usuario (aislamiento entre usuarios)."""
+    if user_id is not None:
+        return Path(__file__).parent / f".sent_notifications_{user_id}.json"
+    return SENT_NOTIFICATIONS_FILE
+
+
+def load_sent_notifications(user_id=None):
+    path = _sent_notifications_file(user_id)
+    if path.exists():
         try:
-            return json.loads(SENT_NOTIFICATIONS_FILE.read_text())
+            return json.loads(path.read_text())
         except Exception:
             return {}
     return {}
 
 
-def save_sent_notifications(data):
+def save_sent_notifications(data, user_id=None):
+    path = _sent_notifications_file(user_id)
     try:
-        SENT_NOTIFICATIONS_FILE.write_text(json.dumps(data))
+        path.write_text(json.dumps(data))
     except Exception:
         pass
 
 
-def login():
+def login(moodle_url=None, username=None, password=None):
+    moodle_url = moodle_url or MOODLE_URL
+    username = username or USERNAME
+    password = password or PASSWORD
+
     session = requests.Session()
 
     session.headers.update({
@@ -49,7 +62,7 @@ def login():
         )
     })
 
-    login_url = f"{MOODLE_URL}/login/index.php"
+    login_url = f"{moodle_url}/login/index.php"
 
     print("🔵 Abriendo Akumaja...")
 
@@ -81,8 +94,8 @@ def login():
     response = session.post(
         login_url,
         data={
-            "username": USERNAME,
-            "password": PASSWORD,
+            "username": username,
+            "password": password,
             "logintoken": logintoken,
         },
         timeout=30,
@@ -101,8 +114,9 @@ def login():
     return session
 
 
-def get_sesskey(session):
-    response = session.get(f"{MOODLE_URL}/my/courses.php", timeout=30)
+def get_sesskey(session, moodle_url=None):
+    moodle_url = moodle_url or MOODLE_URL
+    response = session.get(f"{moodle_url}/my/courses.php", timeout=30)
     response.raise_for_status()
 
     match = re.search(r'"sesskey":"([a-zA-Z0-9]+)"', response.text)
@@ -111,7 +125,9 @@ def get_sesskey(session):
     return match.group(1)
 
 
-def call_ajax(session, sesskey, method, args):
+def call_ajax(session, sesskey, method, args, moodle_url=None):
+    moodle_url = moodle_url or MOODLE_URL
+
     payload = json.dumps([
         {
             "index": 0,
@@ -121,11 +137,11 @@ def call_ajax(session, sesskey, method, args):
     ])
 
     response = session.post(
-        f"{MOODLE_URL}/lib/ajax/service.php?sesskey={sesskey}",
+        f"{moodle_url}/lib/ajax/service.php?sesskey={sesskey}",
         data=payload,
         headers={
             "Content-Type": "application/json; charset=utf-8",
-            "Referer": f"{MOODLE_URL}/my/courses.php",
+            "Referer": f"{moodle_url}/my/courses.php",
             "X-RequestedWith": "XMLHttpRequest",
         },
         timeout=30,
@@ -144,10 +160,11 @@ def call_ajax(session, sesskey, method, args):
     return first["data"]
 
 
-def get_courses(session):
+def get_courses(session, moodle_url=None):
+    moodle_url = moodle_url or MOODLE_URL
     print("📚 Consultando Course overview (vía AJAX)...")
 
-    sesskey = get_sesskey(session)
+    sesskey = get_sesskey(session, moodle_url)
 
     data = call_ajax(
         session,
@@ -161,6 +178,7 @@ def get_courses(session):
             "customfieldname": "",
             "customfieldvalue": "",
         },
+        moodle_url=moodle_url,
     )
 
     courses = data.get("courses", [])
@@ -173,21 +191,23 @@ def get_courses(session):
         result.append({
             "id": course_id,
             "name": c.get("fullname", f"Curso {course_id}"),
-            "url": c.get("viewurl", f"{MOODLE_URL}/course/view.php?id={course_id}"),
+            "url": c.get("viewurl", f"{moodle_url}/course/view.php?id={course_id}"),
         })
 
     return result
 
 
-def get_upcoming_events(session, days_ahead=30):
+def get_upcoming_events(session, days_ahead=30, moodle_url=None):
     """Obtiene eventos/actividades próximas (entregas, exámenes, etc.)"""
-    sesskey = get_sesskey(session)
+    moodle_url = moodle_url or MOODLE_URL
+    sesskey = get_sesskey(session, moodle_url)
 
     data = call_ajax(
         session,
         sesskey,
         "core_calendar_get_action_events_by_timesort",
         {"timesortfrom": 0},
+        moodle_url=moodle_url,
     )
 
     events = data.get("events", [])
@@ -215,15 +235,17 @@ def get_upcoming_events(session, days_ahead=30):
     return upcoming
 
 
-def get_all_calendar_events(session):
+def get_all_calendar_events(session, moodle_url=None):
     """Obtiene todos los eventos del calendario (pasados y futuros)"""
-    sesskey = get_sesskey(session)
+    moodle_url = moodle_url or MOODLE_URL
+    sesskey = get_sesskey(session, moodle_url)
 
     data = call_ajax(
         session,
         sesskey,
         "core_calendar_get_action_events_by_timesort",
         {"timesortfrom": 0},
+        moodle_url=moodle_url,
     )
 
     events = data.get("events", [])
@@ -250,12 +272,13 @@ def get_all_calendar_events(session):
     return all_events
 
 
-def get_recent_activity(session, course_ids=None, days_back=7):
+def get_recent_activity(session, course_ids=None, days_back=7, moodle_url=None):
     """Obtiene actividad reciente de los cursos (foros, recursos nuevos, etc.)"""
+    moodle_url = moodle_url or MOODLE_URL
     if not course_ids:
         return []
 
-    sesskey = get_sesskey(session)
+    sesskey = get_sesskey(session, moodle_url)
     now = datetime.now().timestamp()
     cutoff = now - (days_back * 86400)
 
@@ -270,6 +293,7 @@ def get_recent_activity(session, course_ids=None, days_back=7):
                 sesskey,
                 "core_course_get_course_contents",
                 {"courseid": course_id},
+                moodle_url=moodle_url,
             )
             sections = data if isinstance(data, list) else data.get("sections", [])
             for section in sections:
@@ -293,12 +317,13 @@ def get_recent_activity(session, course_ids=None, days_back=7):
     return activity[:20]
 
 
-def get_notifications_summary(session):
+def get_notifications_summary(session, moodle_url=None):
     """Resumen combinado: próximos vencimientos + actividad reciente"""
-    events = get_upcoming_events(session, days_ahead=30)
-    courses = get_courses(session)
+    moodle_url = moodle_url or MOODLE_URL
+    events = get_upcoming_events(session, days_ahead=30, moodle_url=moodle_url)
+    courses = get_courses(session, moodle_url=moodle_url)
     course_ids = [c["id"] for c in courses]
-    activity = get_recent_activity(session, course_ids, days_back=7)
+    activity = get_recent_activity(session, course_ids, days_back=7, moodle_url=moodle_url)
 
     return {
         "upcoming_events": events,
@@ -308,17 +333,18 @@ def get_notifications_summary(session):
     }
 
 
-def check_new_notifications(session):
+def check_new_notifications(session, moodle_url=None, user_id=None):
     """
     Verifica si hay notificaciones nuevas y retorna las que no se han enviado.
-    Usa deduplicación basada en ID único de evento/actividad.
+    Usa deduplicación por USUARIO (user_id) basada en ID único de evento/actividad.
     """
-    sent = load_sent_notifications()
+    moodle_url = moodle_url or MOODLE_URL
+    sent = load_sent_notifications(user_id=user_id)
     now_ts = int(time.time())
     new_notifications = []
 
     # 1. Verificar eventos de calendario próximos (próximas 24h)
-    events = get_upcoming_events(session, days_ahead=1)
+    events = get_upcoming_events(session, days_ahead=1, moodle_url=moodle_url)
     for e in events:
         event_id = f"cal_{e['course_id']}_{e['timestart']}_{e['name'][:30]}"
         if event_id not in sent:
@@ -334,7 +360,7 @@ def check_new_notifications(session):
             sent[event_id] = now_ts
 
     # 2. Verificar eventos vencidos (overdue) - últimos 24h
-    all_events = get_all_calendar_events(session)
+    all_events = get_all_calendar_events(session, moodle_url=moodle_url)
     for e in all_events:
         if not e["is_future"] and e["timestart"]:
             hours_ago = int((now_ts - e["timestart"]) / 3600)
@@ -352,9 +378,9 @@ def check_new_notifications(session):
                     sent[event_id] = now_ts
 
     # 3. Verificar contenido nuevo en cursos (últimas 6h)
-    courses = get_courses(session)
+    courses = get_courses(session, moodle_url=moodle_url)
     course_ids = [c["id"] for c in courses]
-    activity = get_recent_activity(session, course_ids, days_back=1)  # 24h
+    activity = get_recent_activity(session, course_ids, days_back=1, moodle_url=moodle_url)
     for a in activity:
         hours_ago = int((now_ts - a["timemodified"]) / 3600)
         if 0 < hours_ago <= 6:
@@ -375,7 +401,7 @@ def check_new_notifications(session):
     cutoff = now_ts - (7 * 86400)
     sent = {k: v for k, v in sent.items() if v > cutoff}
 
-    save_sent_notifications(sent)
+    save_sent_notifications(sent, user_id=user_id)
     return new_notifications
 
 
