@@ -1,0 +1,39 @@
+# Entorno virtual
+.venv/
+
+# Variables de entorno y credenciales
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Base de datos local
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Archivos temporales
+*.tmp
+*.bak
+
+# IDE / editores
+.vscode/
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de pruebas HTML
+*.html
+
+# Archivos de sesión/cookies
+*.json
+!requirements*.json
+!package*.json
+
+# Notificaciones enviadas (deduplicación local)
+.sent_notifications.json
