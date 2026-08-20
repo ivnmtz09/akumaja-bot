@@ -2,11 +2,17 @@
 .venv/
 
 # Variables de entorno y credenciales
+# (cualquier .env.* salvo la plantilla .env.example)
 .env
+.env.*
+!.env.example
 
 # Python
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
 
 # Base de datos local
 *.db
