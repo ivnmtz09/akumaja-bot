@@ -148,6 +148,7 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def estado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     users = db.list_active_users()
+    end_display = f"{MONITOR_END_HOUR - 1}:59" if MONITOR_END_HOUR == 24 else f"{MONITOR_END_HOUR}:59"
     lines = [
         "🤖 <b>Estado del bot</b>",
         "",
@@ -155,8 +156,9 @@ async def estado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         f"🌐 Instancias Moodle: <b>{len(registry.all())}</b>",
         "",
         f"⏰ Monitoreo: cada {MONITOR_INTERVAL_MINUTES} min "
-        f"({MONITOR_START_HOUR}:00 - {MONITOR_END_HOUR}:59)",
+        f"({MONITOR_START_HOUR}:00 - {end_display})",
     ]
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
 
@@ -823,7 +825,7 @@ def main() -> None:
     )
 
     print("🤖 Bot iniciado. Esperando mensajes...")
-    print(f"📅 Monitoreo automático: {MONITOR_START_HOUR}:00 - {MONITOR_END_HOUR}:59 cada {MONITOR_INTERVAL_MINUTES} min")
+    print(f"📅 Monitoreo automático: {MONITOR_START_HOUR}:00 - {MONITOR_END_HOUR - 1}:59 cada {MONITOR_INTERVAL_MINUTES} min")
 
     app.run_polling()
 
