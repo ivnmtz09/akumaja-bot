@@ -82,21 +82,40 @@ def _menu_keyboard(logged_in):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id
-    logged_in = account_status(chat_id) is not None
+    info = account_status(chat_id)
+    logged_in = info is not None
+
+    if logged_in:
+        header = (
+            "🎓 <b>¡Bienvenido a Akumaja Bot!</b>\n\n"
+            f"👤 <b>Conectado:</b> <code>{info['username']}</code>\n"
+            f"🏫 <b>Facultad:</b> {info['instance_name']}\n"
+            f"🌐 <b>Servidor:</b> <code>{info['instance_base_url']}</code>\n"
+            f"🔄 <b>Última sync:</b> {info['last_sync_at'] or 'Nunca'}\n"
+        )
+    else:
+        header = (
+            "🎓 <b>¡Bienvenido a Akumaja Bot!</b>\n\n"
+            "🔐 <b>No tienes cuenta conectada.</b>\n"
+            "Pulsa <b>/login</b> para empezar.\n"
+        )
+
+    body = (
+        "\n📋 <b>Comandos principales</b>\n"
+        "├─ /cursos — Lista tus cursos\n"
+        "├─ /tareas — Entregas próximas (30 días)\n"
+        "├─ /notificaciones — Resumen completo\n"
+        "├─ /cuenta — Tu info y botones\n"
+        "├─ /cambiar_facultad — Cambia de facultad\n"
+        "├─ /logout — Desconectar\n"
+        "└─ /estado — Info del bot\n"
+        "\n💡 <b>Monitoreo automático:</b> cada 3 h (6:00–23:59)\n"
+        "   Entregas próximas · Vencidas · Contenido nuevo"
+    )
 
     await update.message.reply_text(
-        "🤖 ¡Hola!\n\n"
-        "Soy el bot de Akumaja (Plataforma Virtual Uniguajira).\n\n"
-        "Comandos disponibles:\n"
-        "/login - Conecta tu cuenta de Moodle (primera vez)\n"
-        "/cursos - Lista tus cursos inscritos\n"
-        "/tareas - Muestra actividades y entregas próximas (30 días)\n"
-        "/notificaciones - Resumen completo (vencimientos + actividad reciente)\n"
-        "/cuenta - Muestra tu cuenta conectada\n"
-        "/cambiar_facultad - Cambia tu facultad sin desconectarte\n"
-        "/logout - Desconecta tu cuenta\n"
-        "/estado - Estado del bot\n"
-        "/ayuda - Ayuda detallada",
+        header + body,
+        parse_mode="HTML",
         reply_markup=_menu_keyboard(logged_in),
     )
 
@@ -220,11 +239,27 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("✅ No hay actividades próximas en los próximos 30 días.")
         return
 
+    def _fmt_desc(desc: str, limit: int = 350) -> str:
+        """Trunca descripción si es muy larga, limpia HTML crudo."""
+        if not desc:
+            return ""
+        # quita tags HTML crudos que vengan de Moodle
+        from html import unescape
+        import re
+        text = re.sub(r"<[^>]+>", "", unescape(desc))
+        text = text.strip().replace("\n", " ")
+        if len(text) <= limit:
+            return text
+        return text[:limit].rsplit(" ", 1)[0] + "…"
+
     lines = [f"📅 <b>Próximas actividades ({len(events)})</b>:", ""]
     for e in events:
         lines.append(f"📌 <b>{e['name']}</b>")
         lines.append(f"   📚 Curso: {e['course_name']}")
         lines.append(f"   ⏰ Vence: {e['formatted_time']}")
+        desc = _fmt_desc(e.get("description", ""))
+        if desc:
+            lines.append(f"   📝 <i>{desc}</i>")
         if e['url']:
             lines.append(f"   🔗 <a href='{e['url']}'>Ver en Moodle</a>")
         lines.append("")
