@@ -41,9 +41,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuración de monitoreo
-MONITOR_START_HOUR = 5
-MONITOR_END_HOUR = 23
-MONITOR_INTERVAL_MINUTES = 30
+MONITOR_START_HOUR = 6
+MONITOR_END_HOUR = 24
+MONITOR_INTERVAL_MINUTES = 180
 
 # Estados del flujo de login
 LOGIN_INSTANCE, LOGIN_USERNAME, LOGIN_PASSWORD = range(3)
@@ -120,7 +120,7 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/estado - Información del bot\n"
         "/cancel - Cancelar un proceso de login en curso\n\n"
         "💡 <b>Notificaciones automáticas:</b> el bot te avisa "
-        "cada 30 minutos (5:00 - 23:59) sobre entregas próximas, "
+        "cada 3 horas (6:00 - 23:59) sobre entregas próximas, "
         "vencimientos y contenido nuevo de tus cursos.",
         parse_mode="HTML",
         reply_markup=_menu_keyboard(logged_in),
@@ -696,11 +696,11 @@ async def cf_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 # ---------------------------------------------------------------------------
 
 async def monitor_job(context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Job que se ejecuta cada 30 min para verificar notificaciones nuevas"""
+    """Job que se ejecuta cada 3 horas para verificar notificaciones nuevas"""
     now = datetime.now()
     current_hour = now.hour
 
-    # Solo ejecutar entre 5:00 y 23:59
+    # Solo ejecutar entre 6:00 y 23:59
     if current_hour < MONITOR_START_HOUR or current_hour >= MONITOR_END_HOUR:
         return
 
