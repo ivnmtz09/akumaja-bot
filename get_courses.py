@@ -352,8 +352,8 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
             new_notifications.append({
                 "id": event_id,
                 "type": "deadline_soon",
-                "title": f"⏰ ¡Ojo parce! Se vence: {e['name']}",
-                "message": f"📚 {e['course_name']}\n⏳ Quedan: {hours_left}h\n📅 Vence: {e['formatted_time']}",
+                "title": f"⏰ ¡Ponte pila, cole! Se vence: {e['name']}",
+                "message": f"📚 {e['course_name']}\n⏳ Quedan: {hours_left}h\n📅 Vence: {e['formatted_time']}\n\n💪 ¡Dale que tú puedes!",
                 "url": e['url'],
                 "timestamp": e['timestart'],
             })
@@ -370,8 +370,8 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
                     new_notifications.append({
                         "id": event_id,
                         "type": "overdue",
-                        "title": f"🚨 ¡Se te pasó la fecha, parce!: {e['name']}",
-                        "message": f"📚 {e['course_name']}\n⏰ Ya venció hace {hours_ago}h\n📅 Fecha: {e['formatted_time']}",
+                        "title": f"🚨 ¡Eche, cole! Se te pasó la fecha: {e['name']}",
+                        "message": f"📚 {e['course_name']}\n⏰ Ya venció hace {hours_ago}h\n📅 Fecha: {e['formatted_time']}\n\n😢 Comprométete más la próxima vez.",
                         "url": e['url'],
                         "timestamp": e['timestart'],
                     })
@@ -390,8 +390,8 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
                 new_notifications.append({
                     "id": act_id,
                     "type": "new_content",
-                    "title": f"📄 Subieron algo nuevo: {a['name']}",
-                    "message": f"📚 Curso ID: {a['course_id']}\n📝 Tipo: {modname}\n🕐 Hace: {hours_ago}h ({a['formatted_time']})",
+                    "title": f"📄 Eche, subieron algo nuevo: {a['name']}",
+                    "message": f"📚 Curso ID: {a['course_id']}\n📝 Tipo: {modname}\n🕐 Hace: {hours_ago}h ({a['formatted_time']})\n\n🔥 ¡Revisa eso ya!",
                     "url": a['url'],
                     "timestamp": a['timemodified'],
                 })
