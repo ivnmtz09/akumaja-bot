@@ -87,30 +87,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if logged_in:
         header = (
-            "🎓 <b>¡Bienvenido a Akumaja Bot!</b>\n\n"
-            f"👤 <b>Conectado:</b> <code>{info['username']}</code>\n"
-            f"🏫 <b>Facultad:</b> {info['instance_name']}\n"
+            "🌊 <b>¡Qué más, parce! Bienvenido a Akumaja Bot</b>\n\n"
+            f"👤 <b>Parce conectado:</b> <code>{info['username']}</code>\n"
+            f"🏫 <b>Tu facultad:</b> {info['instance_name']}\n"
             f"🌐 <b>Servidor:</b> <code>{info['instance_base_url']}</code>\n"
-            f"🔄 <b>Última sync:</b> {info['last_sync_at'] or 'Nunca'}\n"
+            f"🔄 <b>Última vuelta:</b> {info['last_sync_at'] or 'Aún no'}\n"
         )
     else:
         header = (
-            "🎓 <b>¡Bienvenido a Akumaja Bot!</b>\n\n"
-            "🔐 <b>No tienes cuenta conectada.</b>\n"
-            "Pulsa <b>/login</b> para empezar.\n"
+            "🌊 <b>¡Qué más, parce! Bienvenido a Akumaja Bot</b>\n\n"
+            "🔐 <b>Todavía no te has conectado, pana.</b>\n"
+            "Dale a <b>/login</b> y nos ponemos al día.\n"
         )
 
     body = (
-        "\n📋 <b>Comandos principales</b>\n"
-        "├─ /cursos — Lista tus cursos\n"
-        "├─ /tareas — Entregas próximas (30 días)\n"
-        "├─ /notificaciones — Resumen completo\n"
-        "├─ /cuenta — Tu info y botones\n"
-        "├─ /cambiar_facultad — Cambia de facultad\n"
-        "├─ /logout — Desconectar\n"
-        "└─ /estado — Info del bot\n"
-        "\n💡 <b>Monitoreo automático:</b> cada 3 h (6:00–23:59)\n"
-        "   Entregas próximas · Vencidas · Contenido nuevo"
+        "\n📋 <b>Lo que puedes hacer:</b>\n"
+        "├─ /cursos — Tus materias al tiro\n"
+        "├─ /tareas — Qué se viene (30 días)\n"
+        "├─ /notificaciones — Resumen completico\n"
+        "├─ /cuenta — Tu perfil y botones\n"
+        "├─ /cambiar_facultad — Cambias de facultad sin drama\n"
+        "├─ /logout — Te sales si quieres\n"
+        "└─ /estado — Cómo va el bot\n"
+        "\n💡 <b>Ojo:</b> te aviso cada 3h (6am–11pm) si se te vence algo, "
+        "si ya pasó la fecha o si subieron cosa nueva. ¡Quedas pilas!"
     )
 
     await update.message.reply_text(
@@ -125,22 +125,22 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     logged_in = account_status(chat_id) is not None
 
     await update.message.reply_text(
-        "🤖 <b>Bot de Akumaja</b>\n\n"
-        "<b>Primera vez:</b> envía /login, elige tu facultad, "
-        "y escribe tu usuario y contraseña de Moodle.\n\n"
-        "<b>Comandos:</b>\n"
-        "/login - Conectar tu cuenta Moodle\n"
-        "/cursos - Lista tus cursos inscritos\n"
-        "/tareas - Actividades y entregas próximas (30 días)\n"
-        "/notificaciones - Resumen de vencimientos y actividad reciente\n"
-        "/cuenta - Ver qué cuenta tienes conectada\n"
-        "/cambiar_facultad - Cambiar de facultad sin desconectarte\n"
-        "/logout - Desconectar tu cuenta (elimina tus datos del bot)\n"
-        "/estado - Información del bot\n"
-        "/cancel - Cancelar un proceso de login en curso\n\n"
-        "💡 <b>Notificaciones automáticas:</b> el bot te avisa "
-        "cada 3 horas (6:00 - 23:59) sobre entregas próximas, "
-        "vencimientos y contenido nuevo de tus cursos.",
+        "🌊 <b>Ayuda de Akumaja Bot, parce</b>\n\n"
+        "<b>¿Primera vez?</b> Manda <b>/login</b>, elige tu facultad, "
+        "mete tu user y clave de Moodle y listo.\n\n"
+        "<b>Comandos pa' que te desenvuelvas:</b>\n"
+        "/login — Conectas tu Moodle\n"
+        "/cursos — Tus materias inscritas\n"
+        "/tareas — Entregas y exams próx. (30 días)\n"
+        "/notificaciones — Resumen completico\n"
+        "/cuenta — Tu info + botones de acción\n"
+        "/cambiar_facultad — Cambias facultad sin desconectarte\n"
+        "/logout — Te desconectas y borro tus datos\n"
+        "/estado — Cómo anda el bot\n"
+        "/cancel — Cortas lo que estés haciendo\n\n"
+        "💡 <b>El bot te avisa cada 3h (6am–11pm):</b> si se te vence algo, "
+        "si ya pasó la fecha o si subieron contenido nuevo. "
+        "¡No se te pasa nada, viejo!",
         parse_mode="HTML",
         reply_markup=_menu_keyboard(logged_in),
     )
@@ -150,13 +150,14 @@ async def estado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     users = db.list_active_users()
     end_display = f"{MONITOR_END_HOUR - 1}:59" if MONITOR_END_HOUR == 24 else f"{MONITOR_END_HOUR}:59"
     lines = [
-        "🤖 <b>Estado del bot</b>",
+        "🤖 <b>Estado del bot, parce</b>",
         "",
-        f"👥 Usuarios conectados: <b>{len(users)}</b>",
-        f"🌐 Instancias Moodle: <b>{len(registry.all())}</b>",
+        f"👥 <b>Gente conectada:</b> {len(users)}",
+        f"🌐 <b>Facultades disponibles:</b> {len(registry.all())}",
         "",
-        f"⏰ Monitoreo: cada {MONITOR_INTERVAL_MINUTES} min "
-        f"({MONITOR_START_HOUR}:00 - {end_display})",
+        f"⏰ <b>Monitoreo:</b> cada {MONITOR_INTERVAL_MINUTES // 60}h "
+        f"({MONITOR_START_HOUR}:00 – {end_display})",
+        "   Te aviso de entregas, vencidos y cosas nuevas.",
     ]
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
@@ -164,7 +165,7 @@ async def estado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data.clear()
-    await update.message.reply_text("❌ Proceso cancelado.")
+    await update.message.reply_text("❌ Dale, cancelado. No pasa nada.")
     return ConversationHandler.END
 
 
@@ -178,15 +179,15 @@ async def _require_client(update: Update, context: ContextTypes.DEFAULT_TYPE):
     client = get_client_for(chat_id)
     if client is None:
         await update.message.reply_text(
-            "🔐 Aún no tienes una cuenta conectada.\n"
-            "Envía /login para conectar tu cuenta de Moodle."
+            "🔐 Parce, todavía no tienes cuenta conectada.\n"
+            "Manda /login y nos ponemos al día."
         )
         return None
     return client
 
 
 async def cursos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("🔄 Obteniendo tus cursos...")
+    await update.message.reply_text("🔄 Dame un chance, trayendo tus materias...")
 
     client = await _require_client(update, context)
     if client is None:
@@ -197,21 +198,20 @@ async def cursos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception as exc:
         logger.exception("Error obteniendo cursos")
         await update.message.reply_text(
-            "❌ Ocurrió un error al obtener tus cursos. "
-            "Intenta de nuevo en unos minutos."
+            "❌ Parce, se me travó algo buscando tus cursos. "
+            "Paciencia y vuelve a intentar."
         )
         return
     finally:
         client.logout()
 
     if not courses:
-        await update.message.reply_text("⚠️ No se encontraron cursos inscritos.")
+        await update.message.reply_text("⚠️ No encontré cursos inscritos. ¿Estás matriculado?")
         return
 
-    lines = [f"📚 <b>Tus cursos ({len(courses)})</b>:", ""]
+    lines = [f"📚 <b>Tus materias ({len(courses)})</b>:", ""]
     for i, course in enumerate(courses, 1):
         lines.append(f"{i}. <b>{course['name']}</b>")
-        lines.append(f"   🆔 ID: <code>{course['id']}</code>")
         lines.append(f"   🔗 <a href='{course['url']}'>Abrir en Moodle</a>")
         lines.append("")
 
@@ -219,7 +219,7 @@ async def cursos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("🔄 Consultando actividades próximas...")
+    await update.message.reply_text("🔄 Revisando qué se te viene...")
 
     client = await _require_client(update, context)
     if client is None:
@@ -230,22 +230,22 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception as exc:
         logger.exception("Error obteniendo actividades")
         await update.message.reply_text(
-            "❌ Ocurrió un error al obtener tus actividades. "
-            "Intenta de nuevo en unos minutos."
+            "❌ No pude traer las actividades, parce. "
+            "Paciencia y vuelve a intentar."
         )
         return
     finally:
         client.logout()
 
     if not events:
-        await update.message.reply_text("✅ No hay actividades próximas en los próximos 30 días.")
+        await update.message.reply_text("✅ No tienes nada pendiente por 30 días. ¡Relájate!")
         return
 
+    from datetime import datetime as _dt
+
     def _fmt_desc(desc: str, limit: int = 350) -> str:
-        """Trunca descripción si es muy larga, limpia HTML crudo."""
         if not desc:
             return ""
-        # quita tags HTML crudos que vengan de Moodle
         from html import unescape
         import re
         text = re.sub(r"<[^>]+>", "", unescape(desc))
@@ -254,15 +254,31 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             return text
         return text[:limit].rsplit(" ", 1)[0] + "…"
 
-    lines = [f"📅 <b>Próximas actividades ({len(events)})</b>:", ""]
+    def _urgency_tag(timestart):
+        now = _dt.now().timestamp()
+        hours_left = (timestart - now) / 3600
+        if hours_left < 0:
+            return "🚨 <b>VENCIDA</b>"
+        if hours_left < 6:
+            return "🔴 <b>¡QUEDA POCO! (< 6h)</b>"
+        if hours_left < 24:
+            return "🟡 <b>Queda menos de 1 día</b>"
+        if hours_left < 72:
+            return "🟠 <b>Quedan 3 días o menos</b>"
+        return ""
+
+    lines = [f"📅 <b>Tus actividades próximas ({len(events)})</b>:", ""]
     for e in events:
+        tag = _urgency_tag(e["timestart"])
         lines.append(f"📌 <b>{e['name']}</b>")
-        lines.append(f"   📚 Curso: {e['course_name']}")
+        if tag:
+            lines.append(f"   ⚠️ {tag}")
+        lines.append(f"   📚 {e['course_name']}")
         lines.append(f"   ⏰ Vence: {e['formatted_time']}")
         desc = _fmt_desc(e.get("description", ""))
         if desc:
             lines.append(f"   📝 <i>{desc}</i>")
-        if e['url']:
+        if e["url"]:
             lines.append(f"   🔗 <a href='{e['url']}'>Ver en Moodle</a>")
         lines.append("")
 
@@ -270,7 +286,7 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("🔄 Obteniendo resumen de notificaciones...")
+    await update.message.reply_text("🔄 Dándole una revisada a todo...")
 
     client = await _require_client(update, context)
     if client is None:
@@ -281,8 +297,8 @@ async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     except Exception as exc:
         logger.exception("Error obteniendo notificaciones")
         await update.message.reply_text(
-            "❌ Ocurrió un error al obtener tus notificaciones. "
-            "Intenta de nuevo en unos minutos."
+            "❌ No pude traer el resumen, parce. "
+            "Paciencia y vuelve a intentar."
         )
         return
     finally:
@@ -291,7 +307,7 @@ async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     events = summary["upcoming_events"]
     activity = summary["recent_activity"]
 
-    lines = ["🔔 <b>Resumen de Notificaciones</b>", ""]
+    lines = ["🔔 <b>Resumen de todo, parce</b>", ""]
 
     if events:
         lines.append(f"📅 <b>Próximos vencimientos ({len(events)})</b>:")
@@ -313,7 +329,7 @@ async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         lines.append("")
 
     if not events and not activity:
-        lines.append("✅ No hay notificaciones pendientes ni actividad reciente.")
+        lines.append("✅ No tienes nada pendiente ni actividad reciente. ¡Dale down!")
 
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
@@ -323,29 +339,28 @@ async def cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     info = account_status(chat_id)
     if info is None:
         await update.message.reply_text(
-            "🔐 No tienes una cuenta conectada.\nEnvía /login para conectar tu cuenta."
+            "🔐 Parce, no tienes cuenta conectada.\nManda /login y nos ponemos al día."
         )
         return
 
-    # Conteo de cursos (best-effort: si Moodle no responde no bloquea /cuenta)
     cursos_count = "—"
     client = get_client_for(chat_id)
     if client is not None:
         try:
             cursos_count = len(client.get_courses())
         except Exception:
-            cursos_count = "No disponible"
+            cursos_count = "No pude traerlos"
         finally:
             client.logout()
 
     text = (
-        "👤 <b>Tu cuenta conectada</b>\n\n"
+        "👤 <b>Tu cuenta, parce</b>\n\n"
         f"Usuario: <code>{info['username']}</code>\n"
         f"Facultad: <b>{info['instance_name']}</b>\n"
         f"Servidor: <code>{info['instance_base_url']}</code>\n"
         f"Cursos: <b>{cursos_count}</b>\n"
-        f"Estado: 🟢 Conectada\n"
-        f"Última sincronización: {info['last_sync_at'] or 'Nunca'}"
+        f"Estado: 🟢 Conectado\n"
+        f"Última vuelta: {info['last_sync_at'] or 'Aún no'}"
     )
     markup = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔄 Cambiar facultad", callback_data="cuenta_cambiar_facultad")],
@@ -362,10 +377,11 @@ async def cuenta_logout_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     chat_id = update.effective_chat.id
     logout_user(chat_id)
     await query.edit_message_text(
-        "👋 Cuenta desconectada. Tus datos fueron eliminados del bot."
+        "👋 Dale, desconectado. Tus datos se borraron del bot.\n"
+        "Si quieres volver, manda /login."
     )
     await query.message.reply_text(
-        "Si quieres conectar otra cuenta, envía /login o pulsa el botón.",
+        "¿Quieres conectar otra cuenta? Dale a /login o usa el botón.",
         reply_markup=_menu_keyboard(False),
     )
 
@@ -374,8 +390,8 @@ async def logout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id
     logout_user(chat_id)
     await update.message.reply_text(
-        "👋 Cuenta desconectada. Tus datos fueron eliminados del bot.\n"
-        "Si quieres volver a conectar otra cuenta, envía /login.",
+        "👋 Dale, ya te desconecté y borré tus datos.\n"
+        "Si quieres volver, manda /login.",
         reply_markup=_menu_keyboard(False),
     )
 
@@ -389,18 +405,18 @@ async def login_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     info = account_status(chat_id)
     if info is not None:
         await update.message.reply_text(
-            "🔐 Ya tienes una cuenta conectada:\n"
+            "🔐 Parce, ya tienes cuenta conectada:\n"
             f"   Usuario: <code>{info['username']}</code>\n"
             f"   Facultad: <b>{info['instance_name']}</b>\n\n"
-            "Para cambiar de facultad usa /cambiar_facultad.\n"
-            "Para desconectarte usa /logout.",
+            "Si quieres cambiar de facultad usa /cambiar_facultad.\n"
+            "Si quieres salir, /logout.",
             parse_mode="HTML",
         )
         return ConversationHandler.END
 
     await update.message.reply_text(
-        "🏛️ <b>¿A qué facultad perteneces?</b>\n\n"
-        "Elige tu facultad para conectarte a tu instancia Moodle:",
+        "🏛️ <b>¿En qué facultad estás, parce?</b>\n\n"
+        "Elige la tuya para conectarte a Moodle:",
         parse_mode="HTML",
         reply_markup=_instances_keyboard(),
     )
@@ -420,17 +436,16 @@ async def login_instance_selected(update: Update, context: ContextTypes.DEFAULT_
     context.user_data["login_instance_id"] = instance_id
     context.user_data.pop("login_username", None)
     await query.edit_message_text(
-        "✅ Facultad seleccionada:\n\n"
+        "✅ <b>Facultad escogida:</b>\n\n"
         f"🏫 <b>{instance.name}</b>\n"
         f"🌐 <code>{instance.base_url}</code>\n\n"
-        "👤 Escribe tu <b>usuario de Akumaja</b>.\n\n"
-        "Es el mismo usuario de tu correo institucional, "
-        "es decir, la parte que aparece antes de:\n"
-        "<code>@uniguajira.edu.co</code>\n\n"
+        "👤 Ahora escribe tu <b>usuario de Akumaja</b>.\n\n"
+        "Es el mismo que usas en tu correo institucional: "
+        "la parte antes de <code>@uniguajira.edu.co</code>.\n\n"
         "Ejemplo:\n"
         "Correo: <code>nombre.apellido@uniguajira.edu.co</code>\n"
         "Usuario: <code>nombre.apellido</code>\n\n"
-        "No necesitas escribir <code>@uniguajira.edu.co</code>.",
+        "No necesitas escribir el <code>@uniguajira.edu.co</code>.",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton(
@@ -450,8 +465,8 @@ async def login_change_faculty(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data.pop("login_instance_id", None)
     context.user_data.pop("login_username", None)
     await query.edit_message_text(
-        "🏛️ <b>¿A qué facultad perteneces?</b>\n\n"
-        "Elige tu facultad para conectarte a tu instancia Moodle:",
+        "🏛️ <b>¿En qué facultad estás, parce?</b>\n\n"
+        "Elige la tuya para conectarte a Moodle:",
         parse_mode="HTML",
         reply_markup=_instances_keyboard(),
     )
@@ -462,21 +477,21 @@ async def login_username(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     raw = update.message.text
     username = normalize_username(raw)
     if not username or len(username) > 100:
-        await update.message.reply_text("⚠️ Escribe un usuario válido.")
+        await update.message.reply_text("⚠️ Escribe un usuario válido, parce.")
         return LOGIN_USERNAME
 
     context.user_data["login_username"] = username
     if username != raw.strip():
         await update.message.reply_text(
-            f"✅ Usaré el usuario: <code>{username}</code>\n\n"
+            f"✅ Va, usaré el usuario: <code>{username}</code>\n\n"
             "🔑 Ahora escribe tu <b>contraseña de Moodle</b>.\n"
-            "⚠️ <i>Se eliminará este mensaje del chat al terminar.</i>",
+            "⚠️ <i>La borro del chat cuando la escribas.</i>",
             parse_mode="HTML",
         )
     else:
         await update.message.reply_text(
             "🔑 Ahora escribe tu <b>contraseña de Moodle</b>.\n"
-            "⚠️ <i>Se eliminará este mensaje del chat al terminar.</i>",
+            "⚠️ <i>La borro del chat cuando la escribas.</i>",
             parse_mode="HTML",
         )
     return LOGIN_PASSWORD
@@ -493,39 +508,36 @@ async def login_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         pass
 
     if not password:
-        await update.message.reply_text("⚠️ Escribe una contraseña válida.")
+        await update.message.reply_text("⚠️ Escribe una contraseña válida, parce.")
         return LOGIN_PASSWORD
 
     instance_id = context.user_data.get("login_instance_id")
     username = context.user_data.get("login_username")
     if not instance_id or not username:
-        await update.message.reply_text("❌ El flujo expiró. Envía /login de nuevo.")
+        await update.message.reply_text("❌ Se venció el tiempo. Manda /login de nuevo.")
         return ConversationHandler.END
 
     try:
         instance = perform_login(chat_id, instance_id, username, password)
     except TooManyAttempts:
         await update.message.reply_text(
-            "🚫 Demasiados intentos fallidos. Espera unos minutos y envía /login."
+            "🚫 ¡Mucho intento fallido! Dale una pausa y vuelve con /login en unos minutos."
         )
         return ConversationHandler.END
     except LoginError:
         await update.message.reply_text(
-            "❌ No se pudo iniciar sesión en Akumaja.\n"
-            "Revisa tu usuario y contraseña e intenta de nuevo "
-            "(o escribe /cancel para salir)."
+            "❌ No pude conectarme a Moodle, parce.\n"
+            "Revisa tu user y clave e intenta de nuevo "
+            "(o manda /cancel si quieres salir)."
         )
         return LOGIN_PASSWORD
 
     context.user_data.clear()
     await update.message.reply_text(
-        f"✅ <b>¡Cuenta conectada!</b>\n\n"
+        f"✅ <b>¡Listo, conectado!</b>\n\n"
         f"Usuario: <code>{username}</code>\n"
         f"Facultad: <b>{instance.name}</b>\n\n"
-        "Ahora puedes usar:\n"
-        "/cursos - ver tus cursos\n"
-        "/tareas - actividades próximas\n"
-        "/notificaciones - resumen de notificaciones",
+        "Ya puedes ver tus cursos, tareas y todo lo que necesites.",
         parse_mode="HTML",
         reply_markup=_menu_keyboard(True),
     )
@@ -555,8 +567,8 @@ async def change_facultad_start(update: Update, context: ContextTypes.DEFAULT_TY
     info = account_status(chat_id)
     if info is None:
         msg = (
-            "🔐 No tienes una cuenta conectada.\n"
-            "Envía /login para conectar tu cuenta primero."
+            "🔐 Parce, no tienes cuenta conectada.\n"
+            "Manda /login primero."
         )
         if update.callback_query:
             await update.callback_query.answer()
@@ -566,9 +578,9 @@ async def change_facultad_start(update: Update, context: ContextTypes.DEFAULT_TY
         return ConversationHandler.END
 
     text = (
-        "🏫 Tu facultad actual:\n"
+        "🏫 <b>Tu facultad actual:</b>\n"
         f"<b>{info['instance_name']}</b>\n\n"
-        "Selecciona la nueva facultad o dependencia:"
+        "¿Cuál quieres cambiar, parce?"
     )
     markup = InlineKeyboardMarkup(_build_faculty_selection(info["instance_id"]))
 
@@ -597,10 +609,10 @@ async def cf_instance_selected(update: Update, context: ContextTypes.DEFAULT_TYP
 
     context.user_data["cf_instance_id"] = instance_id
     await query.edit_message_text(
-        "Has seleccionado:\n\n"
+        "Escogiste:\n\n"
         f"🏫 <b>{instance.name}</b>\n"
         f"🌐 <code>{instance.base_url}</code>\n\n"
-        "¿Quieres intentar conectar tu cuenta en esta instancia?",
+        "¿Quieres conectarte a esta facultad, parce?",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Continuar", callback_data="cf_confirm:yes")],
@@ -627,7 +639,7 @@ async def cf_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     choice = query.data.split(":", 1)[1]
     if choice == "no":
         context.user_data.clear()
-        await query.edit_message_text("👍 De acuerdo. Tu cuenta no cambió.")
+        await query.edit_message_text("👍 Dale, todo como estaba. Tu cuenta no cambió.")
         return ConversationHandler.END
 
     instance_id = context.user_data.get("cf_instance_id")
@@ -640,8 +652,8 @@ async def cf_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         "✅ Has seleccionado:\n\n"
         f"🏫 <b>{instance.name}</b>\n"
         f"🌐 <code>{instance.base_url}</code>\n\n"
-        "👤 Escribe tu <b>usuario de Akumaja</b>.\n\n"
-        "Es el mismo usuario de tu correo institucional, "
+        "👤 Ahora escribe tu <b>usuario de Akumaja</b>.\n\n"
+        "Es el mismo de tu correo institucional, "
         "la parte antes de <code>@uniguajira.edu.co</code>.\n"
         "Ejemplo: <code>nombre.apellido</code>",
         parse_mode="HTML",
@@ -653,21 +665,21 @@ async def cf_username(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     raw = update.message.text
     username = normalize_username(raw)
     if not username or len(username) > 100:
-        await update.message.reply_text("⚠️ Escribe un usuario válido.")
+        await update.message.reply_text("⚠️ Escribe un usuario válido, parce.")
         return CF_USERNAME
 
     context.user_data["cf_username"] = username
     if username != raw.strip():
         await update.message.reply_text(
-            f"✅ Usaré el usuario: <code>{username}</code>\n\n"
+            f"✅ Va, usaré: <code>{username}</code>\n\n"
             "🔑 Ahora escribe tu <b>contraseña de Moodle</b>.\n"
-            "⚠️ <i>Se eliminará este mensaje del chat al terminar.</i>",
+            "⚠️ <i>La borro del chat cuando la escribas.</i>",
             parse_mode="HTML",
         )
     else:
         await update.message.reply_text(
             "🔑 Ahora escribe tu <b>contraseña de Moodle</b>.\n"
-            "⚠️ <i>Se eliminará este mensaje del chat al terminar.</i>",
+            "⚠️ <i>La borro del chat cuando la escribas.</i>",
             parse_mode="HTML",
         )
     return CF_PASSWORD
@@ -684,45 +696,43 @@ async def cf_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         pass
 
     if not password:
-        await update.message.reply_text("⚠️ Escribe una contraseña válida.")
+        await update.message.reply_text("⚠️ Escribe una contraseña válida, parce.")
         return CF_PASSWORD
 
     instance_id = context.user_data.get("cf_instance_id")
     username = context.user_data.get("cf_username")
     if not instance_id or not username:
         await update.message.reply_text(
-            "❌ El flujo expiró. Envía /cambiar_facultad de nuevo."
+            "❌ Se venció el tiempo. Manda /cambiar_facultad de nuevo."
         )
         return ConversationHandler.END
 
     instance = registry.get(instance_id)
     try:
-        # Validación contra la NUEVA instancia: no toca la cuenta actual
         _, course_count = validate_login(chat_id, instance_id, username, password)
     except TooManyAttempts:
         await update.message.reply_text(
-            "🚫 Demasiados intentos fallidos. Espera unos minutos y envía /cambiar_facultad."
+            "🚫 ¡Mucho intento fallido! Dale una pausa y vuelve con /cambiar_facultad."
         )
         return ConversationHandler.END
     except LoginError:
         await update.message.reply_text(
-            f"❌ No se pudo iniciar sesión en {instance.name}.\n"
-            "Tu cuenta actual <b>NO se modificó</b>.\n"
-            "Revisa tu usuario y contraseña e intenta de nuevo "
-            "(o escribe /cancel para salir).",
+            f"❌ No pude conectarme a {instance.name}, parce.\n"
+            "Tu cuenta actual <b>NO se tocó</b>.\n"
+            "Revisa tu user y clave e intenta de nuevo "
+            "(o manda /cancel si quieres salir).",
             parse_mode="HTML",
         )
         return CF_PASSWORD
 
-    # Solo aquí, tras autenticación exitosa, se aplica el cambio
     apply_faculty_change(chat_id, instance_id, username, password)
     context.user_data.clear()
     await update.message.reply_text(
-        f"✅ <b>Facultad cambiada con éxito.</b>\n\n"
+        f"✅ <b>¡Facultad cambiada, listo!</b>\n\n"
         f"🏫 {instance.name}\n"
         f"🌐 <code>{instance.base_url}</code>\n"
-        f"Cursos detectados: <b>{course_count}</b>\n\n"
-        "Tus notificaciones comenzarán a monitorearse en la nueva instancia.",
+        f"Cursos encontrados: <b>{course_count}</b>\n\n"
+        "De ahora en adelante te aviso de las cosas de esta facultad.",
         parse_mode="HTML",
     )
     return ConversationHandler.END

@@ -352,8 +352,8 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
             new_notifications.append({
                 "id": event_id,
                 "type": "deadline_soon",
-                "title": f"⏰ Entrega próxima: {e['name']}",
-                "message": f"Curso: {e['course_name']}\nVence en: {hours_left}h ({e['formatted_time']})",
+                "title": f"⏰ ¡Ojo parce! Se vence: {e['name']}",
+                "message": f"📚 {e['course_name']}\n⏳ Quedan: {hours_left}h\n📅 Vence: {e['formatted_time']}",
                 "url": e['url'],
                 "timestamp": e['timestart'],
             })
@@ -370,8 +370,8 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
                     new_notifications.append({
                         "id": event_id,
                         "type": "overdue",
-                        "title": f"🚨 Vencido: {e['name']}",
-                        "message": f"Curso: {e['course_name']}\nVenció hace: {hours_ago}h ({e['formatted_time']})",
+                        "title": f"🚨 ¡Se te pasó la fecha, parce!: {e['name']}",
+                        "message": f"📚 {e['course_name']}\n⏰ Ya venció hace {hours_ago}h\n📅 Fecha: {e['formatted_time']}",
                         "url": e['url'],
                         "timestamp": e['timestart'],
                     })
@@ -390,8 +390,8 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
                 new_notifications.append({
                     "id": act_id,
                     "type": "new_content",
-                    "title": f"📄 Contenido nuevo: {a['name']}",
-                    "message": f"Curso ID: {a['course_id']}\nTipo: {modname}\nHace: {hours_ago}h ({a['formatted_time']})",
+                    "title": f"📄 Subieron algo nuevo: {a['name']}",
+                    "message": f"📚 Curso ID: {a['course_id']}\n📝 Tipo: {modname}\n🕐 Hace: {hours_ago}h ({a['formatted_time']})",
                     "url": a['url'],
                     "timestamp": a['timemodified'],
                 })
