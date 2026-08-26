@@ -88,7 +88,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if logged_in:
         header = (
             "🌊 <b>¡Qué más, cole! Bienvenido a Akumaja Bot</b>\n\n"
-            f"👤 <b>Cole conectado:</b> <code>{info['username']}</code>\n"
+            f"👤 <b>Usuario conectado:</b> <code>{info['username']}</code>\n"
             f"🏫 <b>Tu facultad:</b> {info['instance_name']}\n"
             f"🌐 <b>Servidor:</b> <code>{info['instance_base_url']}</code>\n"
             f"🔄 <b>Última vuelta:</b> {info['last_sync_at'] or 'Aún no'}\n"
@@ -96,7 +96,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     else:
         header = (
             "🌊 <b>¡Qué más, cole! Bienvenido a Akumaja Bot</b>\n\n"
-            "🔐 <b>Todavía no te has conectado, mi cole.</b>\n"
+            "🔐 <b>Todavía no te has conectado, mi valecita.</b>\n"
             "Dale a <b>/login</b> y nos ponemos al día.\n"
         )
 
@@ -264,7 +264,7 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if hours_left < 24:
             return "🟡 <b>Ojo con eso, que queda menos de 1 día</b>"
         if hours_left < 72:
-            return "🟠 <b>Cule welfare, ya le quedan 3 días o menos</b>"
+            return "🟠 <b>Cule viaje, ya le quedan 3 días o menos</b>"
         return ""
 
     lines = [f"📅 <b>Tus actividades próximas ({len(events)}):</b>", ""]
