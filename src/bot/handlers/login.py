@@ -29,18 +29,18 @@ async def login_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     info = account_status(chat_id)
     if info is not None:
         await update.message.reply_text(
-            "🔐 Cole, ya tienes cuenta conectada:\n"
+            "🔐 Ya tienes una cuenta conectada:\n"
             f"   Usuario: <code>{info['username']}</code>\n"
             f"   Facultad: <b>{info['instance_name']}</b>\n\n"
-            "Si quieres cambiar de facultad usa /cambiar_facultad.\n"
-            "Si quieres salir, /logout.",
+            "Si deseas cambiar de facultad usa /cambiar_facultad.\n"
+            "Si deseas cerrar sesión, usa /logout.",
             parse_mode="HTML",
         )
         return ConversationHandler.END
 
     await update.message.reply_text(
-        "🏛️ <b>¿En qué facultad estás, cole?</b>\n\n"
-        "Elige la tuya para conectarte a Moodle:",
+        "🏛️ <b>¿A qué facultad perteneces?</b>\n\n"
+        "Selecciona tu facultad para conectar tu cuenta de Moodle:",
         parse_mode="HTML",
         reply_markup=instances_keyboard(),
     )
@@ -60,7 +60,7 @@ async def login_instance_selected(update: Update, context: ContextTypes.DEFAULT_
     context.user_data["login_instance_id"] = instance_id
     context.user_data.pop("login_username", None)
     await query.edit_message_text(
-        "✅ <b>Facultad escogida:</b>\n\n"
+        "✅ <b>Facultad seleccionada:</b>\n\n"
         f"🏫 <b>{instance.name}</b>\n"
         f"🌐 <code>{instance.base_url}</code>\n\n"
         "👤 Ahora escribe tu <b>usuario de Akumaja</b>.\n\n"
@@ -89,8 +89,8 @@ async def login_change_faculty(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data.pop("login_instance_id", None)
     context.user_data.pop("login_username", None)
     await query.edit_message_text(
-        "🏛️ <b>¿En qué facultad estás, cole?</b>\n\n"
-        "Elige la tuya para conectarte a Moodle:",
+        "🏛️ <b>¿A qué facultad perteneces?</b>\n\n"
+        "Selecciona tu facultad para conectar tu cuenta de Moodle:",
         parse_mode="HTML",
         reply_markup=instances_keyboard(),
     )
@@ -101,21 +101,21 @@ async def login_username(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     raw = update.message.text
     username = normalize_username(raw)
     if not username or len(username) > 100:
-        await update.message.reply_text("⚠️ Escribe un usuario válido, cole.")
+        await update.message.reply_text("⚠️ Por favor ingresa un usuario válido.")
         return LOGIN_USERNAME
 
     context.user_data["login_username"] = username
     if username != raw.strip():
         await update.message.reply_text(
-            f"✅ Va, usaré el usuario: <code>{username}</code>\n\n"
+            f"✅ Usaré el usuario: <code>{username}</code>\n\n"
             "🔑 Ahora escribe tu <b>contraseña de Moodle</b>.\n"
-            "⚠️ <i>La borro del chat cuando la escribas.</i>",
+            "⚠️ <i>Por seguridad, el mensaje se borrará de inmediato.</i>",
             parse_mode="HTML",
         )
     else:
         await update.message.reply_text(
             "🔑 Ahora escribe tu <b>contraseña de Moodle</b>.\n"
-            "⚠️ <i>La borro del chat cuando la escribas.</i>",
+            "⚠️ <i>Por seguridad, el mensaje se borrará de inmediato.</i>",
             parse_mode="HTML",
         )
     return LOGIN_PASSWORD
@@ -132,36 +132,36 @@ async def login_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         pass
 
     if not password:
-        await update.message.reply_text("⚠️ Escribe una contraseña válida, cole.")
+        await update.message.reply_text("⚠️ Por favor escribe una contraseña válida.")
         return LOGIN_PASSWORD
 
     instance_id = context.user_data.get("login_instance_id")
     username = context.user_data.get("login_username")
     if not instance_id or not username:
-        await update.message.reply_text("❌ Se venció el tiempo. Manda /login de nuevo.")
+        await update.message.reply_text("❌ El tiempo de espera expiró. Envía /login nuevamente.")
         return ConversationHandler.END
 
     try:
         instance = perform_login(chat_id, instance_id, username, password)
     except TooManyAttempts:
         await update.message.reply_text(
-            "🚫 ¡Mucho intento fallido! Dale una pausa y vuelve con /login en unos minutos."
+            "🚫 Demasiados intentos fallidos. Por seguridad, espera unos minutos antes de volver a intentar con /login."
         )
         return ConversationHandler.END
     except LoginError:
         await update.message.reply_text(
-            "❌ No pude conectarme a Moodle, cole.\n"
-            "Revisa tu user y clave e intenta de nuevo "
-            "(o manda /cancel si quieres salir)."
+            "❌ No fue posible conectar con Moodle.\n"
+            "Verifica tu usuario y contraseña e intenta nuevamente "
+            "(o envía /cancel para cancelar)."
         )
         return LOGIN_PASSWORD
 
     context.user_data.clear()
     await update.message.reply_text(
-        f"✅ <b>¡Listo, conectado!</b>\n\n"
+        f"✅ <b>¡Conexión exitosa!</b>\n\n"
         f"Usuario: <code>{username}</code>\n"
         f"Facultad: <b>{instance.name}</b>\n\n"
-        "Ya puedes ver tus cursos, tareas y todo lo que necesites.",
+        "Ya puedes consultar tus cursos, tareas y recibir alertas automáticas.",
         parse_mode="HTML",
         reply_markup=menu_keyboard(True),
     )

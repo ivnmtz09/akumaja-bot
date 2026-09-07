@@ -600,3 +600,20 @@ class TestLoginFlow:
         assert "login_instance_id" not in ctx.user_data
         assert "login_username" not in ctx.user_data
         assert "facultad" in query.edited[0].lower()
+
+
+# ---------------------------------------------------------------------------
+# Limpieza de nombres de eventos (anti-redundancia)
+# ---------------------------------------------------------------------------
+
+class TestCleanEventName:
+    def test_clean_event_name_prefixes(self):
+        from src.moodle.api import _clean_event_name
+
+        assert _clean_event_name("Vencimiento de Taller 1") == "Taller 1"
+        assert _clean_event_name("Vencimiento: Tarea 2") == "Tarea 2"
+        assert _clean_event_name("Se vence: Cuestionario 3") == "Cuestionario 3"
+        assert _clean_event_name("Se vence el plazo para la entrega de Proyecto") == "Proyecto"
+        assert _clean_event_name("Entrega de Ensayo") == "Ensayo"
+        assert _clean_event_name("Taller de Matemáticas") == "Taller de Matemáticas"
+        assert _clean_event_name("") == "Actividad sin nombre"

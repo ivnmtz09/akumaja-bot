@@ -26,15 +26,15 @@ async def _require_client(update: Update, context: ContextTypes.DEFAULT_TYPE):
     client = get_client_for(chat_id)
     if client is None:
         await update.message.reply_text(
-            "🔐 Cole, todavía no tienes cuenta conectada.\n"
-            "Manda /login y nos ponemos al día."
+            "🔐 Aún no has conectado tu cuenta Moodle.\n"
+            "Envía /login para comenzar."
         )
         return None
     return client
 
 
 async def cursos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("🔄 Dame un chance, trayendo tus materias...")
+    await update.message.reply_text("🔄 Consultando tus materias inscritas...")
 
     client = await _require_client(update, context)
     if client is None:
@@ -45,15 +45,15 @@ async def cursos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception:
         logger.exception("Error obteniendo cursos")
         await update.message.reply_text(
-            "❌ Cole, se me travó algo buscando tus cursos. "
-            "Paciencia y vuelve a intentar."
+            "❌ Ocurrió un inconveniente al consultar tus materias. "
+            "Por favor intenta de nuevo en unos momentos."
         )
         return
     finally:
         client.logout()
 
     if not courses:
-        await update.message.reply_text("⚠️ No encontré cursos inscritos. ¿Estás matriculado?")
+        await update.message.reply_text("⚠️ No encontré cursos inscritos. ¿Estás matriculado en este período?")
         return
 
     lines = [f"📚 <b>Tus materias ({len(courses)})</b>:", ""]
@@ -66,7 +66,7 @@ async def cursos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("🔄 Dale, revisando qué se te viene...")
+    await update.message.reply_text("🔄 Revisando tus próximas actividades y entregas...")
 
     client = await _require_client(update, context)
     if client is None:
@@ -77,15 +77,15 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     except Exception:
         logger.exception("Error obteniendo actividades")
         await update.message.reply_text(
-            "❌ No pude traer las actividades, cole. "
-            "Paciencia y vuelve a intentar."
+            "❌ No pude consultar las actividades en este momento. "
+            "Por favor intenta de nuevo más tarde."
         )
         return
     finally:
         client.logout()
 
     if not events:
-        await update.message.reply_text("✅ ¡No tienes na' pendiente por 30 días! Relájate, cole.")
+        await update.message.reply_text("✅ ¡Todo al día! No tienes actividades pendientes en los próximos 30 días.")
         return
 
     def _fmt_desc(desc: str, limit: int = 350) -> str:
@@ -101,13 +101,13 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         now = _dt.now().timestamp()
         hours_left = (timestart - now) / 3600
         if hours_left < 0:
-            return "🚨 <b>¡Eche, ya venció la mondá!</b>"
+            return "🚨 <b>¡Plazo vencido!</b>"
         if hours_left < 6:
-            return "🔴 <b>¡Ponte pila en esa mondá! Queda menos de 6h</b>"
+            return "🔴 <b>¡Ponte las pilas! Quedan menos de 6 horas</b>"
         if hours_left < 24:
-            return "🟡 <b>Ojo con eso, que queda menos de 1 día</b>"
+            return "🟡 <b>Ojo al dato: queda menos de 1 día</b>"
         if hours_left < 72:
-            return "🟠 <b>Cule viaje, ya le quedan 3 días o menos</b>"
+            return "🟠 <b>Atención: quedan 3 días o menos</b>"
         return ""
 
     lines = [f"📅 <b>Tus actividades próximas ({len(events)}):</b>", ""]
@@ -129,7 +129,7 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("🔄 Dándole una revisada a todo...")
+    await update.message.reply_text("🔄 Consultando el resumen de novedades...")
 
     client = await _require_client(update, context)
     if client is None:
@@ -140,8 +140,8 @@ async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     except Exception:
         logger.exception("Error obteniendo notificaciones")
         await update.message.reply_text(
-            "❌ No pude traer el resumen, cole. "
-            "Paciencia y vuelve a intentar."
+            "❌ No pude consultar el resumen en este momento. "
+            "Por favor intenta de nuevo más tarde."
         )
         return
     finally:
@@ -150,7 +150,7 @@ async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     events = summary["upcoming_events"]
     activity = summary["recent_activity"]
 
-    lines = ["🔔 <b>Resumen de todo, cole</b>", ""]
+    lines = ["🔔 <b>Resumen de novedades y vencimientos</b>", ""]
 
     if events:
         lines.append(f"📅 <b>Próximos vencimientos ({len(events)})</b>:")
@@ -172,7 +172,7 @@ async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         lines.append("")
 
     if not events and not activity:
-        lines.append("✅ No tienes nada pendiente ni actividad reciente. ¡Dale down!")
+        lines.append("✅ Todo despejado: no tienes tareas pendientes ni novedades recientes.")
 
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
@@ -182,7 +182,7 @@ async def cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     info = account_status(chat_id)
     if info is None:
         await update.message.reply_text(
-            "🔐 Cole, no tienes cuenta conectada.\nManda /login y nos ponemos al día."
+            "🔐 Aún no has conectado tu cuenta Moodle.\nUsa /login para comenzar."
         )
         return
 
@@ -192,18 +192,18 @@ async def cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         try:
             cursos_count = len(client.get_courses())
         except Exception:
-            cursos_count = "No pude traerlos"
+            cursos_count = "No disponible"
         finally:
             client.logout()
 
     text = (
-        "👤 <b>Tu cuenta, cole</b>\n\n"
+        "👤 <b>Tu cuenta conectada</b>\n\n"
         f"Usuario: <code>{info['username']}</code>\n"
         f"Facultad: <b>{info['instance_name']}</b>\n"
         f"Servidor: <code>{info['instance_base_url']}</code>\n"
-        f"Cursos: <b>{cursos_count}</b>\n"
+        f"Cursos matriculados: <b>{cursos_count}</b>\n"
         f"Estado: 🟢 Conectado\n"
-        f"Última vuelta: {info['last_sync_at'] or 'Aún no'}"
+        f"Última sincronización: {info['last_sync_at'] or 'Aún no'}"
     )
     markup = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔄 Cambiar facultad", callback_data="cuenta_cambiar_facultad")],
@@ -220,11 +220,11 @@ async def cuenta_logout_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     chat_id = update.effective_chat.id
     logout_user(chat_id)
     await query.edit_message_text(
-        "👋 Dale, desconectado. Tus datos se borraron del bot.\n"
-        "Si quieres volver, manda /login."
+        "👋 Sesión cerrada. Tus credenciales y datos fueron eliminados del bot.\n"
+        "Si deseas volver a conectarte, envía /login."
     )
     await query.message.reply_text(
-        "¿Quieres conectar otra cuenta? Dale a /login o usa el botón.",
+        "¿Deseas conectar otra cuenta? Usa /login o presiona el botón del menú.",
         reply_markup=menu_keyboard(False),
     )
 
@@ -233,7 +233,7 @@ async def logout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.effective_chat.id
     logout_user(chat_id)
     await update.message.reply_text(
-        "👋 Dale, ya te desconecté y borré tus datos.\n"
-        "Si quieres volver, manda /login.",
+        "👋 Has cerrado sesión. Tus credenciales y datos fueron eliminados del bot.\n"
+        "Si deseas volver a conectarte, envía /login.",
         reply_markup=menu_keyboard(False),
     )

@@ -21,30 +21,30 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if logged_in:
         header = (
-            "🌊 <b>¡Qué más, cole! Bienvenido a Akumaja Bot</b>\n\n"
+            "🌊 <b>¡Hola! Bienvenido a Akumaja Bot</b>\n\n"
             f"👤 <b>Usuario conectado:</b> <code>{info['username']}</code>\n"
             f"🏫 <b>Tu facultad:</b> {info['instance_name']}\n"
             f"🌐 <b>Servidor:</b> <code>{info['instance_base_url']}</code>\n"
-            f"🔄 <b>Última vuelta:</b> {info['last_sync_at'] or 'Aún no'}\n"
+            f"🔄 <b>Última sincronización:</b> {info['last_sync_at'] or 'Aún no'}\n"
         )
     else:
         header = (
-            "🌊 <b>¡Qué más, cole! Bienvenido a Akumaja Bot</b>\n\n"
-            "🔐 <b>Todavía no te has conectado, mi valecita.</b>\n"
-            "Dale a <b>/login</b> y nos ponemos al día.\n"
+            "🌊 <b>¡Hola! Bienvenido a Akumaja Bot (Uniguajira)</b>\n\n"
+            "🔐 <b>Aún no has conectado tu cuenta Moodle.</b>\n"
+            "Usa <b>/login</b> para comenzar y ponerte al día con tus materias.\n"
         )
 
     body = (
-        "\n📋 <b>Lo que puedes hacer:</b>\n"
-        "├─ /cursos — Tus materias al tiro\n"
-        "├─ /tareas — Qué se viene (30 días)\n"
-        "├─ /notificaciones — Resumen completico\n"
-        "├─ /cuenta — Tu perfil y botones\n"
-        "├─ /cambiar_facultad — Cambias de facultad sin drama\n"
-        "├─ /logout — Te sales si quieres\n"
-        "└─ /estado — Cómo va el bot\n"
-        "\n💡 <b>Ojo:</b> te aviso cada 3h (6am–11pm) si se te vence algo, "
-        "si ya pasó la fecha o si subieron cosa nueva. ¡Quedas pilas!"
+        "\n📋 <b>Comandos disponibles:</b>\n"
+        "├─ /cursos — Consulta tus materias inscritas\n"
+        "├─ /tareas — Próximas entregas y actividades (30 días)\n"
+        "├─ /notificaciones — Resumen de novedades y vencimientos\n"
+        "├─ /cuenta — Estado de tu cuenta y opciones\n"
+        "├─ /cambiar_facultad — Cambiar de facultad o servidor\n"
+        "├─ /logout — Cerrar sesión y desconectar cuenta\n"
+        "└─ /estado — Estado del servicio\n"
+        "\n💡 <b>Recordatorio:</b> Te aviso periódicamente (6am–11pm) sobre entregas "
+        "próximas, fechas límite y nuevo material en tus cursos."
     )
 
     await update.message.reply_text(
@@ -59,22 +59,22 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     logged_in = account_status(chat_id) is not None
 
     await update.message.reply_text(
-        "🌊 <b>Ayuda de Akumaja Bot, cole</b>\n\n"
-        "<b>¿Primera vez?</b> Manda <b>/login</b>, elige tu facultad, "
-        "mete tu user y clave de Moodle y listo.\n\n"
-        "<b>Comandos pa' que te desenvuelvas:</b>\n"
-        "/login — Conectas tu Moodle\n"
-        "/cursos — Tus materias inscritas\n"
-        "/tareas — Entregas y exams próx. (30 días)\n"
-        "/notificaciones — Resumen completico\n"
-        "/cuenta — Tu info + botones de acción\n"
-        "/cambiar_facultad — Cambias facultad sin desconectarte\n"
-        "/logout — Te desconectas y borro tus datos\n"
-        "/estado — Cómo anda el bot\n"
-        "/cancel — Cortas lo que estés haciendo\n\n"
-        "💡 <b>El bot te avisa cada 3h (6am–11pm):</b> si se te vence algo, "
-        "si ya pasó la fecha o si subieron contenido nuevo. "
-        "¡No se te pasa nada, pim@!",
+        "🌊 <b>Centro de ayuda — Akumaja Bot</b>\n\n"
+        "<b>¿Primera vez por aquí?</b> Envía <b>/login</b>, selecciona tu facultad, "
+        "ingresa tu usuario y contraseña de Moodle y listo.\n\n"
+        "<b>Comandos disponibles:</b>\n"
+        "/login — Conectar tu cuenta Moodle\n"
+        "/cursos — Ver tus materias inscritas\n"
+        "/tareas — Entregas y exámenes próximos (30 días)\n"
+        "/notificaciones — Resumen completo de actividades\n"
+        "/cuenta — Tu información y opciones de cuenta\n"
+        "/cambiar_facultad — Cambiar de facultad sin desconectarte\n"
+        "/logout — Cerrar sesión y borrar tus datos del bot\n"
+        "/estado — Estado y estadísticas del servicio\n"
+        "/cancel — Cancelar la operación en curso\n\n"
+        "💡 <b>Monitoreo automático:</b> Te aviso periódicamente (6am–11pm) si tienes "
+        "entregas próximas, tareas vencidas o nuevo contenido en tus cursos. "
+        "¡Para que no se te pase ninguna entrega!",
         parse_mode="HTML",
         reply_markup=menu_keyboard(logged_in),
     )
@@ -84,19 +84,19 @@ async def estado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     users = db.list_active_users()
     end_display = f"{MONITOR_END_HOUR - 1}:59" if MONITOR_END_HOUR == 24 else f"{MONITOR_END_HOUR}:59"
     lines = [
-        "🤖 <b>Estado del bot, cole</b>",
+        "🤖 <b>Estado del servicio — Akumaja Bot</b>",
         "",
-        f"👥 <b>Gente conectada:</b> {len(users)}",
+        f"👥 <b>Usuarios conectados:</b> {len(users)}",
         f"🌐 <b>Facultades disponibles:</b> {len(registry.all())}",
         "",
-        f"⏰ <b>Monitoreo:</b> cada {MONITOR_INTERVAL_MINUTES // 60}h "
+        f"⏰ <b>Monitoreo automático:</b> cada {MONITOR_INTERVAL_MINUTES // 60}h "
         f"({MONITOR_START_HOUR}:00 – {end_display})",
-        "   Te aviso de entregas, vencidos y cosas nuevas.",
+        "   Notificaciones de entregas, tareas vencidas y novedades.",
     ]
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data.clear()
-    await update.message.reply_text("❌ Dale, cancelado. No pasa nada.")
+    await update.message.reply_text("❌ Operación cancelada. Todo permanece igual.")
     return ConversationHandler.END

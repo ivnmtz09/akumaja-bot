@@ -30,8 +30,8 @@ async def change_facultad_start(update: Update, context: ContextTypes.DEFAULT_TY
     info = account_status(chat_id)
     if info is None:
         msg = (
-            "🔐 Cole, no tienes cuenta conectada.\n"
-            "Manda /login primero."
+            "🔐 No tienes una cuenta conectada.\n"
+            "Envía /login primero."
         )
         if update.callback_query:
             await update.callback_query.answer()
@@ -43,7 +43,7 @@ async def change_facultad_start(update: Update, context: ContextTypes.DEFAULT_TY
     text = (
         "🏫 <b>Tu facultad actual:</b>\n"
         f"<b>{info['instance_name']}</b>\n\n"
-        "¿Cuál quieres cambiar, cole?"
+        "¿A cuál facultad deseas cambiarte?"
     )
     markup = InlineKeyboardMarkup(build_faculty_selection(info["instance_id"]))
 
@@ -72,10 +72,10 @@ async def cf_instance_selected(update: Update, context: ContextTypes.DEFAULT_TYP
 
     context.user_data["cf_instance_id"] = instance_id
     await query.edit_message_text(
-        "Escogiste:\n\n"
+        "Seleccionaste:\n\n"
         f"🏫 <b>{instance.name}</b>\n"
         f"🌐 <code>{instance.base_url}</code>\n\n"
-        "¿Quieres conectarte a esta facultad, cole?",
+        "¿Deseas cambiarte a esta facultad?",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Continuar", callback_data="cf_confirm:yes")],
@@ -102,7 +102,7 @@ async def cf_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     choice = query.data.split(":", 1)[1]
     if choice == "no":
         context.user_data.clear()
-        await query.edit_message_text("👍 Dale, todo como estaba. Tu cuenta no cambió.")
+        await query.edit_message_text("👍 Operación cancelada. Tu cuenta no cambió.")
         return ConversationHandler.END
 
     instance_id = context.user_data.get("cf_instance_id")
@@ -128,21 +128,21 @@ async def cf_username(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     raw = update.message.text
     username = normalize_username(raw)
     if not username or len(username) > 100:
-        await update.message.reply_text("⚠️ Escribe un usuario válido, cole.")
+        await update.message.reply_text("⚠️ Por favor ingresa un usuario válido.")
         return CF_USERNAME
 
     context.user_data["cf_username"] = username
     if username != raw.strip():
         await update.message.reply_text(
-            f"✅ Va, usaré: <code>{username}</code>\n\n"
+            f"✅ Usaré: <code>{username}</code>\n\n"
             "🔑 Ahora escribe tu <b>contraseña de Moodle</b>.\n"
-            "⚠️ <i>La borro del chat cuando la escribas.</i>",
+            "⚠️ <i>Por seguridad, el mensaje se borrará de inmediato.</i>",
             parse_mode="HTML",
         )
     else:
         await update.message.reply_text(
             "🔑 Ahora escribe tu <b>contraseña de Moodle</b>.\n"
-            "⚠️ <i>La borro del chat cuando la escribas.</i>",
+            "⚠️ <i>Por seguridad, el mensaje se borrará de inmediato.</i>",
             parse_mode="HTML",
         )
     return CF_PASSWORD
@@ -159,14 +159,14 @@ async def cf_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         pass
 
     if not password:
-        await update.message.reply_text("⚠️ Escribe una contraseña válida, cole.")
+        await update.message.reply_text("⚠️ Por favor escribe una contraseña válida.")
         return CF_PASSWORD
 
     instance_id = context.user_data.get("cf_instance_id")
     username = context.user_data.get("cf_username")
     if not instance_id or not username:
         await update.message.reply_text(
-            "❌ Se venció el tiempo. Manda /cambiar_facultad de nuevo."
+            "❌ El tiempo de espera expiró. Envía /cambiar_facultad de nuevo."
         )
         return ConversationHandler.END
 
@@ -175,15 +175,15 @@ async def cf_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         _, course_count = validate_login(chat_id, instance_id, username, password)
     except TooManyAttempts:
         await update.message.reply_text(
-            "🚫 ¡Mucho intento fallido! Dale una pausa y vuelve con /cambiar_facultad."
+            "🚫 Demasiados intentos fallidos. Por seguridad, espera unos minutos antes de intentar con /cambiar_facultad."
         )
         return ConversationHandler.END
     except LoginError:
         await update.message.reply_text(
-            f"❌ No pude conectarme a {instance.name}, cole.\n"
-            "Tu cuenta actual <b>NO se tocó</b>.\n"
-            "Revisa tu user y clave e intenta de nuevo "
-            "(o manda /cancel si quieres salir).",
+            f"❌ No fue posible conectar con {instance.name}.\n"
+            "Tu cuenta actual <b>no se modificó</b>.\n"
+            "Verifica tu usuario y contraseña e intenta nuevamente "
+            "(o envía /cancel para cancelar).",
             parse_mode="HTML",
         )
         return CF_PASSWORD
@@ -191,11 +191,11 @@ async def cf_password(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     apply_faculty_change(chat_id, instance_id, username, password)
     context.user_data.clear()
     await update.message.reply_text(
-        f"✅ <b>¡Facultad cambiada, listo!</b>\n\n"
+        f"✅ <b>¡Facultad actualizada con éxito!</b>\n\n"
         f"🏫 {instance.name}\n"
         f"🌐 <code>{instance.base_url}</code>\n"
         f"Cursos encontrados: <b>{course_count}</b>\n\n"
-        "De ahora en adelante te aviso de las cosas de esta facultad.",
+        "A partir de ahora recibirás alertas y novedades de esta facultad.",
         parse_mode="HTML",
     )
     return ConversationHandler.END

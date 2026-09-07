@@ -295,6 +295,37 @@ def get_notifications_summary(session, moodle_url=None):
     }
 
 
+def _clean_event_name(raw_name: str) -> str:
+    """Limpia prefijos redundantes comunes de Moodle en nombres de actividades."""
+    if not raw_name:
+        return "Actividad sin nombre"
+
+    name = raw_name.strip()
+    prefixes = [
+        "se vence el plazo para la entrega de",
+        "se vence el plazo para la entrega",
+        "se vence el plazo para",
+        "se vence el plazo de",
+        "se vence:",
+        "vencimiento de la entrega de",
+        "vencimiento de entrega de",
+        "vencimiento de la entrega:",
+        "vencimiento de",
+        "vencimiento:",
+        "entrega de",
+        "entrega:",
+    ]
+
+    lower = name.lower()
+    for prefix in prefixes:
+        if lower.startswith(prefix):
+            remainder = name[len(prefix):].strip(" :,-")
+            if remainder:
+                return remainder
+
+    return name
+
+
 def check_new_notifications(session, moodle_url=None, user_id=None):
     """Verifica notificaciones nuevas con deduplicación por usuario."""
     moodle_url = moodle_url or MOODLE_URL
@@ -308,11 +339,17 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
         event_id = f"cal_{e['course_id']}_{e['timestart']}_{e['name'][:30]}"
         if event_id not in sent:
             hours_left = max(0, int((e['timestart'] - now_ts) / 3600))
+            clean_name = _clean_event_name(e['name'])
             new_notifications.append({
                 "id": event_id,
                 "type": "deadline_soon",
-                "title": f"⏰ ¡Ponte pila, cole! Se vence: {e['name']}",
-                "message": f"📚 {e['course_name']}\n⏳ Quedan: {hours_left}h\n📅 Vence: {e['formatted_time']}\n\n💪 ¡Dale que tú puedes!",
+                "title": f"⏰ Próxima entrega: {clean_name}",
+                "message": (
+                    f"📚 {e['course_name']}\n"
+                    f"⏳ Tiempo restante: {hours_left}h\n"
+                    f"📅 Fecha límite: {e['formatted_time']}\n\n"
+                    "💪 ¡Ponte las pilas y no lo dejes para el final!"
+                ),
                 "url": e['url'],
                 "timestamp": e['timestart'],
             })
@@ -326,11 +363,17 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
             if 0 < hours_ago <= 24:
                 event_id = f"overdue_{e['course_id']}_{e['timestart']}_{e['name'][:30]}"
                 if event_id not in sent:
+                    clean_name = _clean_event_name(e['name'])
                     new_notifications.append({
                         "id": event_id,
                         "type": "overdue",
-                        "title": f"🚨 ¡Eche, cole! Se te pasó la fecha: {e['name']}",
-                        "message": f"📚 {e['course_name']}\n⏰ Ya venció hace {hours_ago}h\n📅 Fecha: {e['formatted_time']}\n\n😢 Comprométete más la próxima vez.",
+                        "title": f"🚨 Entrega vencida: {clean_name}",
+                        "message": (
+                            f"📚 {e['course_name']}\n"
+                            f"⏰ Venció hace: {hours_ago}h\n"
+                            f"📅 Fecha: {e['formatted_time']}\n\n"
+                            "⚠️ Revisa en la plataforma si tu docente aún permite entregas con retraso."
+                        ),
                         "url": e['url'],
                         "timestamp": e['timestart'],
                     })
@@ -346,11 +389,17 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
             act_id = f"content_{a['course_id']}_{a['timemodified']}_{a['name'][:30]}"
             if act_id not in sent:
                 modname = a["modname"].replace("mod_", "")
+                clean_name = _clean_event_name(a['name'])
                 new_notifications.append({
                     "id": act_id,
                     "type": "new_content",
-                    "title": f"📄 Eche, subieron algo nuevo: {a['name']}",
-                    "message": f"📚 Curso ID: {a['course_id']}\n📝 Tipo: {modname}\n🕐 Hace: {hours_ago}h ({a['formatted_time']})\n\n🔥 ¡Revisa eso ya!",
+                    "title": f"📄 Nuevo material en curso: {clean_name}",
+                    "message": (
+                        f"📚 Curso ID: {a['course_id']}\n"
+                        f"📝 Tipo: {modname}\n"
+                        f"🕐 Publicado hace: {hours_ago}h ({a['formatted_time']})\n\n"
+                        "👀 Échale un vistazo en Moodle cuando puedas."
+                    ),
                     "url": a['url'],
                     "timestamp": a['timemodified'],
                 })
