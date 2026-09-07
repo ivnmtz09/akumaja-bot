@@ -1,58 +1,39 @@
+"""Cliente de bajo nivel y scraping de API AJAX de Moodle para Akumaja.
+
+Maneja autenticación por sesión HTTP, extracción de sesskey y llamadas
+a los endpoints AJAX internos de Moodle (courses, calendar, recent activity).
+"""
+
 import json
 import os
 import re
 import sys
 import time
-from datetime import datetime, time as dt_time
+from datetime import datetime
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 
+from src.core.config import MOODLE_URL, MOODLE_USERNAME, MOODLE_PASSWORD
+from src.services.notifications import (
+    SENT_NOTIFICATIONS_FILE,
+    get_sent_notifications_file,
+    load_sent_notifications,
+    save_sent_notifications,
+)
 
-load_dotenv()
-
-MOODLE_URL = os.getenv("MOODLE_URL")
-USERNAME = os.getenv("MOODLE_USERNAME")
-PASSWORD = os.getenv("MOODLE_PASSWORD")
-
-# Archivo para guardar notificaciones ya enviadas (deduplicación)
-SENT_NOTIFICATIONS_FILE = Path(__file__).parent / ".sent_notifications.json"
-
-
-def _sent_notifications_file(user_id=None):
-    """Archivo de deduplicación por usuario (aislamiento entre usuarios)."""
-    if user_id is not None:
-        return Path(__file__).parent / f".sent_notifications_{user_id}.json"
-    return SENT_NOTIFICATIONS_FILE
-
-
-def load_sent_notifications(user_id=None):
-    path = _sent_notifications_file(user_id)
-    if path.exists():
-        try:
-            return json.loads(path.read_text())
-        except Exception:
-            return {}
-    return {}
-
-
-def save_sent_notifications(data, user_id=None):
-    path = _sent_notifications_file(user_id)
-    try:
-        path.write_text(json.dumps(data))
-    except Exception:
-        pass
+# Alias de compatibilidad hacia atrás
+_sent_notifications_file = get_sent_notifications_file
 
 
 def login(moodle_url=None, username=None, password=None):
+    """Inicia sesión en Moodle y retorna una sesión HTTP con cookies autenticadas."""
     moodle_url = moodle_url or MOODLE_URL
     username = username or USERNAME
     password = password or PASSWORD
 
     session = requests.Session()
-
     session.headers.update({
         "User-Agent": (
             "Mozilla/5.0 (X11; Linux x86_64) "
@@ -64,32 +45,16 @@ def login(moodle_url=None, username=None, password=None):
 
     login_url = f"{moodle_url}/login/index.php"
 
-    print("🔵 Abriendo Akumaja...")
-
-    response = session.get(
-        login_url,
-        timeout=30,
-    )
+    response = session.get(login_url, timeout=30)
     response.raise_for_status()
 
-    soup = BeautifulSoup(
-        response.text,
-        "html.parser",
-    )
-
-    token_input = soup.find(
-        "input",
-        {"name": "logintoken"},
-    )
+    soup = BeautifulSoup(response.text, "html.parser")
+    token_input = soup.find("input", {"name": "logintoken"})
 
     if not token_input:
-        raise RuntimeError(
-            "No se encontró el logintoken de Moodle."
-        )
+        raise RuntimeError("No se encontró el logintoken de Moodle.")
 
     logintoken = token_input.get("value")
-
-    print("🔐 Iniciando sesión...")
 
     response = session.post(
         login_url,
@@ -101,20 +66,21 @@ def login(moodle_url=None, username=None, password=None):
         timeout=30,
         allow_redirects=True,
     )
-
     response.raise_for_status()
 
     if "/login/" in response.url:
-        raise RuntimeError(
-            "El login no parece haber sido exitoso."
-        )
-
-    print(f"✅ Login correcto: {response.url}")
+        raise RuntimeError("El login no parece haber sido exitoso.")
 
     return session
 
 
+# Alias para variables globales si eran referenciadas
+USERNAME = MOODLE_USERNAME
+PASSWORD = MOODLE_PASSWORD
+
+
 def get_sesskey(session, moodle_url=None):
+    """Obtiene la clave de sesión (sesskey) de Moodle."""
     moodle_url = moodle_url or MOODLE_URL
     response = session.get(f"{moodle_url}/my/courses.php", timeout=30)
     response.raise_for_status()
@@ -126,6 +92,7 @@ def get_sesskey(session, moodle_url=None):
 
 
 def call_ajax(session, sesskey, method, args, moodle_url=None):
+    """Realiza una petición al endpoint AJAX de Moodle."""
     moodle_url = moodle_url or MOODLE_URL
 
     payload = json.dumps([
@@ -161,9 +128,8 @@ def call_ajax(session, sesskey, method, args, moodle_url=None):
 
 
 def get_courses(session, moodle_url=None):
+    """Obtiene los cursos inscritos del usuario vía AJAX."""
     moodle_url = moodle_url or MOODLE_URL
-    print("📚 Consultando Course overview (vía AJAX)...")
-
     sesskey = get_sesskey(session, moodle_url)
 
     data = call_ajax(
@@ -182,7 +148,6 @@ def get_courses(session, moodle_url=None):
     )
 
     courses = data.get("courses", [])
-
     result = []
     for c in courses:
         course_id = c.get("id")
@@ -198,7 +163,7 @@ def get_courses(session, moodle_url=None):
 
 
 def get_upcoming_events(session, days_ahead=30, moodle_url=None):
-    """Obtiene eventos/actividades próximas (entregas, exámenes, etc.)"""
+    """Obtiene eventos/actividades próximas (entregas, exámenes, etc.)."""
     moodle_url = moodle_url or MOODLE_URL
     sesskey = get_sesskey(session, moodle_url)
 
@@ -236,7 +201,7 @@ def get_upcoming_events(session, days_ahead=30, moodle_url=None):
 
 
 def get_all_calendar_events(session, moodle_url=None):
-    """Obtiene todos los eventos del calendario (pasados y futuros)"""
+    """Obtiene todos los eventos del calendario (pasados y futuros)."""
     moodle_url = moodle_url or MOODLE_URL
     sesskey = get_sesskey(session, moodle_url)
 
@@ -273,7 +238,7 @@ def get_all_calendar_events(session, moodle_url=None):
 
 
 def get_recent_activity(session, course_ids=None, days_back=7, moodle_url=None):
-    """Obtiene actividad reciente de los cursos (foros, recursos nuevos, etc.)"""
+    """Obtiene actividad reciente de los cursos (foros, recursos nuevos, etc.)."""
     moodle_url = moodle_url or MOODLE_URL
     if not course_ids:
         return []
@@ -282,10 +247,7 @@ def get_recent_activity(session, course_ids=None, days_back=7, moodle_url=None):
     now = datetime.now().timestamp()
     cutoff = now - (days_back * 86400)
 
-    # Usar core_course_get_course_contents para ver módulos recientes
-    # Pero es muy pesado. Alternative: usar el reporte de actividad reciente
     activity = []
-
     for course_id in course_ids[:5]:  # Limitar a 5 cursos para no sobrecargar
         try:
             data = call_ajax(
@@ -318,7 +280,7 @@ def get_recent_activity(session, course_ids=None, days_back=7, moodle_url=None):
 
 
 def get_notifications_summary(session, moodle_url=None):
-    """Resumen combinado: próximos vencimientos + actividad reciente"""
+    """Resumen combinado: próximos vencimientos + actividad reciente."""
     moodle_url = moodle_url or MOODLE_URL
     events = get_upcoming_events(session, days_ahead=30, moodle_url=moodle_url)
     courses = get_courses(session, moodle_url=moodle_url)
@@ -334,16 +296,13 @@ def get_notifications_summary(session, moodle_url=None):
 
 
 def check_new_notifications(session, moodle_url=None, user_id=None):
-    """
-    Verifica si hay notificaciones nuevas y retorna las que no se han enviado.
-    Usa deduplicación por USUARIO (user_id) basada en ID único de evento/actividad.
-    """
+    """Verifica notificaciones nuevas con deduplicación por usuario."""
     moodle_url = moodle_url or MOODLE_URL
     sent = load_sent_notifications(user_id=user_id)
     now_ts = int(time.time())
     new_notifications = []
 
-    # 1. Verificar eventos de calendario próximos (próximas 24h)
+    # 1. Eventos de calendario próximos (próximas 24h)
     events = get_upcoming_events(session, days_ahead=1, moodle_url=moodle_url)
     for e in events:
         event_id = f"cal_{e['course_id']}_{e['timestart']}_{e['name'][:30]}"
@@ -359,7 +318,7 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
             })
             sent[event_id] = now_ts
 
-    # 2. Verificar eventos vencidos (overdue) - últimos 24h
+    # 2. Eventos vencidos (overdue) - últimas 24h
     all_events = get_all_calendar_events(session, moodle_url=moodle_url)
     for e in all_events:
         if not e["is_future"] and e["timestart"]:
@@ -377,7 +336,7 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
                     })
                     sent[event_id] = now_ts
 
-    # 3. Verificar contenido nuevo en cursos (últimas 6h)
+    # 3. Contenido nuevo en cursos (últimas 6h)
     courses = get_courses(session, moodle_url=moodle_url)
     course_ids = [c["id"] for c in courses]
     activity = get_recent_activity(session, course_ids, days_back=1, moodle_url=moodle_url)
@@ -432,25 +391,14 @@ def main():
     print("=" * 70)
 
     if not courses:
-        print(
-            "⚠️ No se encontraron cursos."
-        )
+        print("⚠️ No se encontraron cursos.")
         return
 
-    for number, course in enumerate(
-        courses,
-        start=1,
-    ):
+    for number, course in enumerate(courses, start=1):
         print()
-        print(
-            f"{number}. {course['name']}"
-        )
-        print(
-            f"   🆔 ID: {course['id']}"
-        )
-        print(
-            f"   🔗 {course['url']}"
-        )
+        print(f"{number}. {course['name']}")
+        print(f"   🆔 ID: {course['id']}")
+        print(f"   🔗 {course['url']}")
 
 
 if __name__ == "__main__":

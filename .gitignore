@@ -44,9 +44,18 @@ Thumbs.db
 # Notificaciones enviadas (deduplicación local por usuario)
 .sent_notifications.json
 .sent_notifications_*.json
+data/notifications/*.json
+!data/notifications/.gitkeep
 
 # Clave de cifrado local (si AKUMAJA_ENCRYPTION_KEY no está definida)
+*.key
 akumaja.key
+data/*.key
+
+# Datos locales en data/
+data/*.db
+data/*.sqlite3
+!data/.gitkeep
 
 # Backups locales
 backups/

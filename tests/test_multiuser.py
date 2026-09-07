@@ -5,10 +5,10 @@ from types import SimpleNamespace
 
 import pytest
 
-import accounts
-import db
-import security
-from moodle_instances import MoodleInstance, registry
+from src.services import accounts
+from src.core import database as db
+from src.core import security
+from src.moodle.instances import MoodleInstance, registry
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +161,7 @@ class FakeClient:
 
 @pytest.fixture()
 def fake_login(monkeypatch, isolated_db, isolated_security):
-    import accounts
+    from src.services import accounts
     monkeypatch.setattr(accounts, "MoodleClient", FakeClient)
     monkeypatch.setattr(accounts, "_attempts", {})
     yield accounts
@@ -226,8 +226,8 @@ class FakeTelegramBot:
 
 class TestMonitor:
     def test_collect_sends_per_user(self, monkeypatch, isolated_db, isolated_security):
-        import monitor
-        import accounts
+        from src.services import monitor
+        from src.services import accounts
 
         isolated_db.upsert_user("111", "ingenierias", "a", "t1")
         isolated_db.upsert_user("222", "faceya", "b", "t2")
@@ -247,7 +247,7 @@ class TestMonitor:
         assert bot.sent[0][0] == "111"
 
     def test_one_user_failure_does_not_affect_others(self, monkeypatch, isolated_db, isolated_security):
-        import monitor
+        from src.services import monitor
 
         isolated_db.upsert_user("111", "ingenierias", "a", "t1")
         isolated_db.upsert_user("222", "faceya", "b", "t2")

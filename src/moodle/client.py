@@ -1,11 +1,11 @@
-"""Cliente Moodle por usuario: envuelve get_courses con sesión propia.
+"""Cliente Moodle por usuario: envuelve src.moodle.api con sesión propia.
 
 Cada usuario tiene su propia instancia de MoodleClient con su sesión
 HTTP independiente, credenciales y base_url. No comparte nada con
 otros usuarios.
 """
 
-import get_courses as moodle_api
+from src.moodle import api as moodle_api
 
 
 class MoodleClient:

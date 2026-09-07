@@ -4,7 +4,7 @@ Cada dependencia/facultad de la universidad tiene su propia instancia
 Moodle. Este módulo es la ÚNICA fuente de verdad para las URLs.
 
 Para agregar una nueva instancia:
-    from moodle_instances import registry
+    from src.moodle.instances import registry
     registry.add("mi_facultad", "Mi Facultad", "https://akumajami.uniguajira.edu.co")
 """
 

@@ -4,20 +4,19 @@ Las contraseñas de Moodle se cifran con Fernet (AES-128-CBC + HMAC)
 usando una clave maestra definida en AKUMAJA_ENCRYPTION_KEY.
 
 Si la clave no está definida, se genera automáticamente un archivo
-local `akumaja.key` (modo desarrollo). En producción SIEMPRE definir
+local `data/akumaja.key` (modo desarrollo). En producción SIEMPRE definir
 AKUMAJA_ENCRYPTION_KEY en el entorno.
 """
 
 import os
 from pathlib import Path
-
 from cryptography.fernet import Fernet, InvalidToken
 
-KEY_FILE = Path(__file__).parent / "akumaja.key"
+from src.core.config import KEY_FILE, AKUMAJA_ENCRYPTION_KEY
 
 
 def _load_or_create_key():
-    env_key = os.getenv("AKUMAJA_ENCRYPTION_KEY")
+    env_key = os.getenv("AKUMAJA_ENCRYPTION_KEY") or AKUMAJA_ENCRYPTION_KEY
     if env_key:
         key = env_key.strip().encode()
         try:
@@ -30,13 +29,14 @@ def _load_or_create_key():
         return KEY_FILE.read_bytes().strip()
 
     key = Fernet.generate_key()
+    KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
     KEY_FILE.write_bytes(key)
     try:
         os.chmod(KEY_FILE, 0o600)
     except OSError:
         pass
-    print("⚠️ AKUMAJA_ENCRYPTION_KEY no definida: se generó akumaja.key local.")
-    print("   Para producción, define AKUMAJA_ENCRYPTION_KEY y elimina akumaja.key.")
+    print(f"⚠️ AKUMAJA_ENCRYPTION_KEY no definida: se generó clave local en {KEY_FILE}.")
+    print("   Para producción, define AKUMAJA_ENCRYPTION_KEY y elimina el archivo de clave local.")
     return key
 
 

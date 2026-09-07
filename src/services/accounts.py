@@ -8,11 +8,22 @@ import os
 import sys
 import time
 
-import db
-import get_courses as moodle_api
-import security
-from moodle_client import MoodleClient
-from moodle_instances import registry
+from src.core import database as db
+from src.core import security
+from src.core.config import (
+    TELEGRAM_CHAT_ID,
+    MOODLE_URL,
+    MOODLE_USERNAME,
+    MOODLE_PASSWORD,
+)
+from src.moodle import api as moodle_api
+from src.moodle.client import MoodleClient
+from src.moodle.instances import registry
+from src.services.notifications import (
+    SENT_NOTIFICATIONS_FILE,
+    get_sent_notifications_file,
+    reset_sent_notifications,
+)
 
 MAX_LOGIN_ATTEMPTS = 5
 
@@ -83,8 +94,8 @@ def validate_login(chat_id, instance_id, username, password):
 
 
 def perform_login(chat_id, instance_id, username, password):
-    """
-    Valida las credenciales contra la instancia Moodle y guarda la cuenta
+    """Valida las credenciales contra la instancia Moodle y guarda la cuenta
+
     cifrada en la base de datos. Lanza LoginError si falla.
     """
     instance, _ = validate_login(chat_id, instance_id, username, password)
@@ -183,18 +194,18 @@ def _clear_attempts(chat_id):
 # ---------------------------------------------------------------------------
 
 def run_legacy_migration(force=False):
-    """
-    Si la DB está vacía y hay credenciales legacy en .env, migra esa cuenta
+    """Si la DB está vacía y hay credenciales legacy en .env, migra esa cuenta
+
     al chat legacy configurado (TELEGRAM_CHAT_ID).
 
     No toca nada si la DB ya tiene usuarios (multi-usuario activo).
     """
     db.init_db()
 
-    legacy_chat_id = os.getenv("TELEGRAM_CHAT_ID")
-    legacy_url = os.getenv("MOODLE_URL")
-    legacy_user = os.getenv("MOODLE_USERNAME")
-    legacy_pass = os.getenv("MOODLE_PASSWORD")
+    legacy_chat_id = TELEGRAM_CHAT_ID or os.getenv("TELEGRAM_CHAT_ID")
+    legacy_url = MOODLE_URL or os.getenv("MOODLE_URL")
+    legacy_user = MOODLE_USERNAME or os.getenv("MOODLE_USERNAME")
+    legacy_pass = MOODLE_PASSWORD or os.getenv("MOODLE_PASSWORD")
 
     if not legacy_chat_id or not legacy_url or not legacy_user or not legacy_pass:
         print("⚠️  No hay cuenta legacy configurada (TELEGRAM_CHAT_ID/MOODLE_*).")
@@ -218,13 +229,13 @@ def run_legacy_migration(force=False):
 
 
 def _migrate_sent_notifications(chat_id):
-    legacy_file = moodle_api.SENT_NOTIFICATIONS_FILE
-    user_file = moodle_api._sent_notifications_file(chat_id)
+    legacy_file = SENT_NOTIFICATIONS_FILE
+    user_file = get_sent_notifications_file(chat_id)
     if legacy_file.exists() and not user_file.exists():
         try:
-            data = legacy_file.read_text()
-            user_file.write_text(data)
-            print(f"📁 Dedup legacy migrado a .sent_notifications_{chat_id}.json")
+            data = legacy_file.read_text(encoding="utf-8")
+            user_file.write_text(data, encoding="utf-8")
+            print(f"📁 Dedup legacy migrado a {user_file}")
         except Exception:
             pass
 

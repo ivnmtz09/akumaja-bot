@@ -34,7 +34,7 @@ Bot de Telegram para la Plataforma Virtual Akumaja (Uniguajira), **multiusuario 
 | FACEYA | `akumajafaceya.uniguajira.edu.co` |
 | Centro de Lenguas y Postgrados | `virtual.uniguajira.edu.co` |
 
-Para agregar una instancia: `registry.add("mi_facultad", "Mi Facultad", "https://akumaja...")` en `moodle_instances.py`.
+Para agregar una instancia: `registry.add("mi_facultad", "Mi Facultad", "https://akumaja...")` en `src/moodle/instances.py`.
 
 ## Requisitos
 
@@ -93,7 +93,7 @@ la cuenta de `.env` (`MOODLE_URL`, `MOODLE_USERNAME`, `MOODLE_PASSWORD`) al
 `TELEGRAM_CHAT_ID` configurado. Para migrar manualmente:
 
 ```bash
-python -m accounts
+python -m src.services.accounts
 ```
 
 ## Despliegue en servidor (systemd)
@@ -127,25 +127,42 @@ sudo journalctl -u akumaja-bot -f
 
 ```
 akumaja-bot/
-├── bot.py               # Bot principal: handlers, flujos /login y /cambiar_facultad, menú, JobQueue
-├── get_courses.py       # Lógica de login y consulta a Moodle (AJAX API)
-├── moodle_instances.py  # Registro central de instancias Moodle
-├── moodle_client.py     # Cliente Moodle por usuario (sesión propia)
-├── accounts.py          # Login/logout/cambio de facultad, normalización, migración legacy
-├── monitor.py           # Recolección y envío de notificaciones por usuario
-├── db.py                # SQLite: usuarios (una cuenta por chat)
-├── security.py          # Cifrado Fernet de credenciales
-├── requirements.txt     # Dependencias Python
-├── .env.example         # Plantilla de configuración
-├── .env                 # Variables de entorno (NO commitear)
-├── .gitignore
-├── tests/               # Pruebas unitarias (pytest)
-└── README.md
-
-# Archivos generados en ejecución (gitignored)
-├── akumaja.db           # Base de datos con las cuentas (contraseñas cifradas)
-├── akumaja.key          # Clave Fernet local (si no se define AKUMAJA_ENCRYPTION_KEY)
-└── .sent_notifications_{user_id}.json  # Deduplicación de notificaciones por usuario
+├── bot.py                  # Bot principal en la raíz: orquestador limpio y registro de handlers
+├── pytest.ini              # Configuración de pythonpath para pruebas
+├── requirements.txt        # Dependencias Python
+├── .env.example            # Plantilla de configuración
+├── .env                    # Variables de entorno (NO commitear)
+├── .gitignore              # Ignora data/, claves, logs y temporales
+├── README.md
+│
+├── data/                   # Archivos generados en ejecución (gitignored)
+│   ├── akumaja.db          # Base de datos SQLite con cuentas (contraseñas cifradas)
+│   ├── akumaja.key         # Clave Fernet local (si no se define AKUMAJA_ENCRYPTION_KEY)
+│   └── notifications/      # Deduplicación de notificaciones por usuario (.sent_notifications_*.json)
+│
+├── src/                    # Código fuente modularizado
+│   ├── core/               # Núcleo del sistema
+│   │   ├── config.py       # Rutas centralizadas, variables de entorno y migración automática
+│   │   ├── database.py     # SQLite thread-safe: usuarios y sincronización
+│   │   └── security.py     # Cifrado Fernet de credenciales
+│   ├── moodle/             # Integración con Moodle (Uniguajira)
+│   │   ├── instances.py    # Registro central de facultades/instancias Moodle
+│   │   ├── client.py       # Cliente Moodle por usuario con sesión HTTP independiente
+│   │   └── api.py          # Llamadas AJAX, scraping de cursos, calendario y actividades
+│   ├── services/           # Lógica de negocio y servicios de fondo
+│   │   ├── accounts.py     # Flujo de login, cambio de facultad, normalización y migración legacy
+│   │   ├── monitor.py      # Monitoreo automático y recolección multiusuario
+│   │   └── notifications.py# Deduplicación y persistencia de alertas
+│   └── bot/                # Presentación y controladores de Telegram
+│       ├── keyboards.py    # Teclados ReplyKeyboardMarkup e InlineKeyboardMarkup
+│       └── handlers/       # Handlers modulares por responsabilidad
+│           ├── general.py  # /start, /ayuda, /estado, /cancel
+│           ├── courses.py  # /cursos, /tareas, /notificaciones, /cuenta, /logout
+│           ├── login.py    # ConversationHandler del flujo /login
+│           └── faculty.py  # ConversationHandler de /cambiar_facultad
+│
+└── tests/                  # Pruebas unitarias (pytest)
+    └── test_multiuser.py
 ```
 
 ## Cómo funciona
@@ -159,7 +176,7 @@ El bot usa los **endpoints AJAX internos de Moodle** (los mismos que usa el bloq
 ## Pruebas
 
 ```bash
-python -m pytest tests/ -v
+pytest tests/ -v
 ```
 
 44 pruebas unitarias con mocks (sin credenciales reales): instancias, base de
@@ -167,8 +184,11 @@ datos, cifrado, login, cambio de facultad, normalización de usuario, menú y mo
 
 ## Backup
 
-La base de datos `akumaja.db` contiene las cuentas (contraseñas cifradas).
-Respáldala periódicamente junto con `akumaja.key` (o conserva `AKUMAJA_ENCRYPTION_KEY`),
+Los datos generados se almacenan de forma ordenada en la carpeta `data/`:
+- `data/akumaja.db` contiene las cuentas con contraseñas cifradas.
+- `data/akumaja.key` contiene la clave Fernet local (si no defines `AKUMAJA_ENCRYPTION_KEY`).
+
+Respaldar la carpeta `data/` periódicamente (o conserva `AKUMAJA_ENCRYPTION_KEY`),
 porque sin la clave no se pueden descifrar las credenciales.
 
 ## Licencia

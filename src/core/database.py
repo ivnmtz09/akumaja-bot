@@ -9,7 +9,7 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "akumaja.db"
+from src.core.config import DB_PATH
 
 _lock = threading.Lock()
 
@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 
 def _connect():
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn

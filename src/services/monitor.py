@@ -7,16 +7,16 @@ afecta a los demás.
 
 import logging
 
-import db
-import get_courses as moodle_api
-from accounts import get_client_for
+from src.core import database as db
+from src.moodle import api as moodle_api
+from src.services.accounts import get_client_for
 
 logger = logging.getLogger(__name__)
 
 
 async def collect_notifications_for_users(telegram_bot):
-    """
-    Revisa notificaciones nuevas de todos los usuarios activos y las envía.
+    """Revisa notificaciones nuevas de todos los usuarios activos y las envía.
+
     Retorna el número de notificaciones enviadas (para logs/depuración).
     """
     users = db.list_active_users()
@@ -62,8 +62,8 @@ async def _send_notifications(telegram_bot, chat_id, notifications):
 
 
 async def legacy_check(telegram_bot, chat_id):
-    """
-    Fallback: usa la cuenta legacy de .env para un chat dado.
+    """Fallback: usa la cuenta legacy de .env para un chat dado.
+
     Se usa SOLO si la DB está vacía (modo single-user conservado).
     """
     try:

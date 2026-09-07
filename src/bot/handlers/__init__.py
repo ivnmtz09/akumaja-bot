@@ -1,0 +1,68 @@
+"""Exportación centralizada de manejadores de Telegram."""
+
+from src.bot.handlers.general import start, ayuda, estado, cancel
+from src.bot.handlers.courses import (
+    cursos,
+    tareas,
+    notificaciones,
+    cuenta,
+    cuenta_logout_cb,
+    logout,
+)
+from src.bot.handlers.login import (
+    LOGIN_INSTANCE,
+    LOGIN_USERNAME,
+    LOGIN_PASSWORD,
+    login_start,
+    login_instance_selected,
+    login_change_faculty,
+    login_username,
+    login_password,
+    get_login_handler,
+)
+from src.bot.handlers.faculty import (
+    CF_INSTANCE,
+    CF_CONFIRM,
+    CF_USERNAME,
+    CF_PASSWORD,
+    change_facultad_start,
+    cf_instance_selected,
+    cf_cancel,
+    cf_confirm,
+    cf_username,
+    cf_password,
+    get_faculty_handler,
+)
+
+__all__ = [
+    "start",
+    "ayuda",
+    "estado",
+    "cancel",
+    "cursos",
+    "tareas",
+    "notificaciones",
+    "cuenta",
+    "cuenta_logout_cb",
+    "logout",
+    "LOGIN_INSTANCE",
+    "LOGIN_USERNAME",
+    "LOGIN_PASSWORD",
+    "login_start",
+    "login_instance_selected",
+    "login_change_faculty",
+    "login_username",
+    "login_password",
+    "get_login_handler",
+    "CF_INSTANCE",
+    "CF_CONFIRM",
+    "CF_USERNAME",
+    "CF_PASSWORD",
+    "change_facultad_start",
+    "cf_instance_selected",
+    "cf_cancel",
+    "cf_confirm",
+    "cf_username",
+    "cf_password",
+    "get_faculty_handler",
+]
