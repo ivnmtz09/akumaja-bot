@@ -7,7 +7,7 @@ from src.moodle.instances import registry
 def instances_keyboard():
     """Genera teclado inline con todas las facultades disponibles."""
     buttons = [
-        [InlineKeyboardButton(instance.name, callback_data=f"inst:{instance_id}")]
+        [InlineKeyboardButton(f"🏛️ {instance.name}", callback_data=f"inst:{instance_id}")]
         for instance_id, instance in registry.all()
     ]
     return InlineKeyboardMarkup(buttons)

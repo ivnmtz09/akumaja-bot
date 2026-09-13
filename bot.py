@@ -122,6 +122,12 @@ def main() -> None:
     app.add_handler(CommandHandler("logout", logout))
     app.add_handler(CallbackQueryHandler(cuenta_logout_cb, pattern=r"^cuenta_logout$"))
 
+    # Registrar callbacks interactivos (navegación rápida en mensajes)
+    app.add_handler(CallbackQueryHandler(cursos, pattern=r"^view_cursos$"))
+    app.add_handler(CallbackQueryHandler(tareas, pattern=r"^view_tareas$"))
+    app.add_handler(CallbackQueryHandler(notificaciones, pattern=r"^view_notif$"))
+    app.add_handler(CallbackQueryHandler(cuenta, pattern=r"^view_cuenta$"))
+
     # Registrar flujos de conversación (/cambiar_facultad y /login)
     app.add_handler(get_faculty_handler())
     app.add_handler(get_login_handler())

@@ -10,6 +10,7 @@ import re
 import sys
 import time
 from datetime import datetime
+from html import escape
 from pathlib import Path
 
 import requests
@@ -343,12 +344,12 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
             new_notifications.append({
                 "id": event_id,
                 "type": "deadline_soon",
-                "title": f"⏰ Próxima entrega: {clean_name}",
+                "title": f"⏰ <b>Próxima entrega:</b> {escape(clean_name)}",
                 "message": (
-                    f"📚 {e['course_name']}\n"
-                    f"⏳ Tiempo restante: {hours_left}h\n"
-                    f"📅 Fecha límite: {e['formatted_time']}\n\n"
-                    "💪 ¡Ponte las pilas y no lo dejes para el final!"
+                    f"📚 <b>Materia:</b> {escape(e['course_name'])}\n"
+                    f"⏳ <b>Tiempo restante:</b> <code>{hours_left} horas</code>\n"
+                    f"📅 <b>Fecha límite:</b> <code>{e['formatted_time']}</code>\n\n"
+                    "💪 <i>¡Ponte las pilas y no lo dejes para el final!</i>"
                 ),
                 "url": e['url'],
                 "timestamp": e['timestart'],
@@ -367,12 +368,12 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
                     new_notifications.append({
                         "id": event_id,
                         "type": "overdue",
-                        "title": f"🚨 Entrega vencida: {clean_name}",
+                        "title": f"🚨 <b>Entrega vencida:</b> {escape(clean_name)}",
                         "message": (
-                            f"📚 {e['course_name']}\n"
-                            f"⏰ Venció hace: {hours_ago}h\n"
-                            f"📅 Fecha: {e['formatted_time']}\n\n"
-                            "⚠️ Revisa en la plataforma si tu docente aún permite entregas con retraso."
+                            f"📚 <b>Materia:</b> {escape(e['course_name'])}\n"
+                            f"⏰ <b>Venció hace:</b> <code>{hours_ago} horas</code>\n"
+                            f"📅 <b>Fecha original:</b> <code>{e['formatted_time']}</code>\n\n"
+                            "⚠️ <i>Revisa en la plataforma si tu docente aún permite entregas con retraso.</i>"
                         ),
                         "url": e['url'],
                         "timestamp": e['timestart'],
@@ -393,12 +394,12 @@ def check_new_notifications(session, moodle_url=None, user_id=None):
                 new_notifications.append({
                     "id": act_id,
                     "type": "new_content",
-                    "title": f"📄 Nuevo material en curso: {clean_name}",
+                    "title": f"📄 <b>Nuevo material en curso:</b> {escape(clean_name)}",
                     "message": (
-                        f"📚 Curso ID: {a['course_id']}\n"
-                        f"📝 Tipo: {modname}\n"
-                        f"🕐 Publicado hace: {hours_ago}h ({a['formatted_time']})\n\n"
-                        "👀 Échale un vistazo en Moodle cuando puedas."
+                        f"📚 <b>Curso ID:</b> <code>{a['course_id']}</code>\n"
+                        f"📝 <b>Tipo de recurso:</b> <code>{escape(modname)}</code>\n"
+                        f"🕐 <b>Publicado hace:</b> <code>{hours_ago}h ({a['formatted_time']})</code>\n\n"
+                        "👀 <i>Échale un vistazo en Moodle cuando puedas.</i>"
                     ),
                     "url": a['url'],
                     "timestamp": a['timemodified'],

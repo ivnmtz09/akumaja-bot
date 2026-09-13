@@ -7,9 +7,12 @@ afecta a los demás.
 
 import logging
 
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions
+
 from src.core import database as db
 from src.moodle import api as moodle_api
 from src.services.accounts import get_client_for
+from src.bot.ui import LINE_DOUBLE, LINE_LIGHT
 
 logger = logging.getLogger(__name__)
 
@@ -49,12 +52,39 @@ async def collect_notifications_for_users(telegram_bot):
 
 async def _send_notifications(telegram_bot, chat_id, notifications):
     sent = 0
+    link_opts = LinkPreviewOptions(is_disabled=True)
     for notif in notifications:
         try:
-            text = f"{notif['title']}\n\n{notif['message']}"
-            if notif.get("url"):
-                text += f"\n\n🔗 {notif['url']}"
-            await telegram_bot.send_message(chat_id=chat_id, text=text)
+            title = notif.get("title", "Aviso de Akumaja")
+            message = notif.get("message", "")
+            url = notif.get("url")
+
+            text = (
+                "🔔 <b>AVISO DE AKUMAJA</b>\n"
+                f"{LINE_DOUBLE}\n"
+                f"{title}\n"
+                f"{LINE_LIGHT}\n"
+                f"{message}\n"
+                f"{LINE_DOUBLE}"
+            )
+
+            reply_markup = None
+            if url:
+                reply_markup = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🔗 Abrir en Moodle ➔", url=url)]
+                ])
+
+            try:
+                await telegram_bot.send_message(
+                    chat_id=chat_id,
+                    text=text,
+                    parse_mode="HTML",
+                    reply_markup=reply_markup,
+                    link_preview_options=link_opts,
+                )
+            except TypeError:
+                await telegram_bot.send_message(chat_id=chat_id, text=text)
+
             sent += 1
         except Exception as exc:
             logger.error("Monitor: fallo al enviar a %s: %s", chat_id, exc)
