@@ -96,6 +96,23 @@ async def monitor_job(context: ContextTypes.DEFAULT_TYPE) -> None:
         await legacy_check(context.bot, chat_id)
 
 
+async def _post_init(application) -> None:
+    """Registra el menú de comandos rápidos en la barra de texto de Telegram."""
+    from telegram import BotCommand
+    await application.bot.set_my_commands([
+        BotCommand("start", "Iniciar el bot"),
+        BotCommand("login", "Conectar tu cuenta de Moodle"),
+        BotCommand("cursos", "Ver tus materias inscritas"),
+        BotCommand("tareas", "Próximas entregas y actividades"),
+        BotCommand("notificaciones", "Novedades y vencimientos"),
+        BotCommand("cuenta", "Estado de tu cuenta"),
+        BotCommand("cambiar_facultad", "Cambiar de facultad"),
+        BotCommand("logout", "Cerrar sesión"),
+        BotCommand("estado", "Estado del servicio"),
+        BotCommand("ayuda", "Ayuda y comandos"),
+    ])
+
+
 def main() -> None:
     if not TELEGRAM_BOT_TOKEN:
         raise RuntimeError("No se encontró TELEGRAM_BOT_TOKEN en .env")
@@ -114,6 +131,7 @@ def main() -> None:
         .connect_timeout(30.0)
         .read_timeout(30.0)
         .write_timeout(30.0)
+        .post_init(_post_init)
         .build()
     )
 

@@ -8,7 +8,6 @@ Consulta tus materias, entregas pendientes y recibe alertas automáticas directo
 
 [![Bot de Telegram](https://img.shields.io/badge/Telegram-@akumaja__ivan__bot-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/akumaja_ivan_bot)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![License](https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge)](LICENSE)
 
 <img src="data/images/qr.png" alt="QR Code - Akumaja Bot" width="220"/>
 
@@ -32,7 +31,7 @@ Consulta tus materias, entregas pendientes y recibe alertas automáticas directo
 - [Estructura del Proyecto](#-estructura-del-proyecto)
 - [Pruebas](#-pruebas)
 - [Backup y Seguridad](#-backup-y-seguridad)
-- [Licencia](#-licencia)
+
 
 ---
 
@@ -407,9 +406,3 @@ Desarrollado por **Iván Martínez** — Ingeniería de Sistemas, Universidad de
 [![Telegram Bot](https://img.shields.io/badge/Probar_el_Bot-@akumaja__ivan__bot-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/akumaja_ivan_bot)
 
 </div>
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la [Licencia MIT](LICENSE).
