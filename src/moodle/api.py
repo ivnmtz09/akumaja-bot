@@ -13,6 +13,7 @@ import requests
 import cloudscraper
 from bs4 import BeautifulSoup
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from html import escape
 from pathlib import Path
 
@@ -188,7 +189,7 @@ def get_upcoming_events(session, days_ahead=30, moodle_url=None):
                 "timestart": timestart,
                 "timeend": e.get("timeend", 0),
                 "url": e.get("url", ""),
-                "formatted_time": datetime.fromtimestamp(timestart).strftime("%d/%m/%Y %H:%M") if timestart else "Sin fecha",
+                "formatted_time": datetime.fromtimestamp(timestart, tz=ZoneInfo("America/Bogota")).strftime("%d/%m/%Y %H:%M") if timestart else "Sin fecha",
                 "event_type": "calendar",
             })
 
@@ -224,7 +225,7 @@ def get_all_calendar_events(session, moodle_url=None):
             "timestart": timestart,
             "timeend": e.get("timeend", 0),
             "url": e.get("url", ""),
-            "formatted_time": datetime.fromtimestamp(timestart).strftime("%d/%m/%Y %H:%M") if timestart else "Sin fecha",
+            "formatted_time": datetime.fromtimestamp(timestart, tz=ZoneInfo("America/Bogota")).strftime("%d/%m/%Y %H:%M") if timestart else "Sin fecha",
             "is_future": timestart > now if timestart else False,
             "event_type": "calendar",
         })
@@ -265,7 +266,7 @@ def get_recent_activity(session, course_ids=None, days_back=7, moodle_url=None):
                             "course_id": course_id,
                             "url": mod.get("url", ""),
                             "timemodified": mod_timemodified,
-                            "formatted_time": datetime.fromtimestamp(mod_timemodified).strftime("%d/%m/%Y %H:%M"),
+                            "formatted_time": datetime.fromtimestamp(mod_timemodified, tz=ZoneInfo("America/Bogota")).strftime("%d/%m/%Y %H:%M"),
                             "event_type": "content",
                         })
         except Exception:
