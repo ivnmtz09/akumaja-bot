@@ -235,5 +235,5 @@ def get_login_handler() -> ConversationHandler:
         },
         fallbacks=[CommandHandler("cancel", cancel)],
         per_message=False,
-        allow_reentry=True, per_message=False,
+        allow_reentry=True,
     )

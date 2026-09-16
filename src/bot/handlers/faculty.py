@@ -246,5 +246,6 @@ def get_faculty_handler() -> ConversationHandler:
             CF_PASSWORD: [MessageHandler(filters.TEXT & ~filters.COMMAND, cf_password)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
-        allow_reentry=True, per_message=False,
+        allow_reentry=True,
+        per_message=False,
     )
