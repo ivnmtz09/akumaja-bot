@@ -158,8 +158,6 @@ async def cursos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             update, err_text, reply_markup=courses_keyboard(), status_msg=status_msg
         )
         return
-    finally:
-        client.logout()
 
     if not course_list:
         empty_text = (
@@ -230,8 +228,7 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             update, err_text, reply_markup=tasks_keyboard(), status_msg=status_msg
         )
         return
-    finally:
-        client.logout()
+
 
     if not events:
         empty_text = (
@@ -264,9 +261,9 @@ async def tareas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
         card_lines = [
             f"{icon} <b>{clean_name}</b>",
-            f"   {badge} • ⏳ <code>{time_str}</code>",
-            f"   📚 <b>Materia:</b> {course_name}",
-            f"   ⏰ <b>Vence:</b> <code>{formatted_time}</code>",
+            f"  📚 <i>{course_name}</i>",
+            f"  ⏰ <code>{formatted_time}</code> ({time_str})",
+            f"  {badge}",
         ]
 
         desc = format_description(e.get("description", ""))
@@ -326,8 +323,7 @@ async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             update, err_text, reply_markup=notifications_keyboard(), status_msg=status_msg
         )
         return
-    finally:
-        client.logout()
+
 
     events = summary.get("upcoming_events", [])
     activity = summary.get("recent_activity", [])
@@ -345,8 +341,8 @@ async def notificaciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             course_name = safe_escape(e.get("course_name", "Materia"))
             badge, time_str, icon = format_urgency(e["timestart"])
             lines.append(f"{icon} <b>{clean_name}</b>")
-            lines.append(f"   📚 <i>{course_name}</i>")
-            lines.append(f"   ⏰ <code>{e.get('formatted_time', '')}</code> • ⏳ <code>{time_str}</code>")
+            lines.append(f"  📚 <i>{course_name}</i>")
+            lines.append(f"  ⏰ <code>{e.get('formatted_time', '')}</code> ({time_str})")
             if e.get("url"):
                 lines.append(f"   🔗 <a href='{e['url']}'>Ver entrega en Moodle ➔</a>")
             lines.append("")
@@ -408,8 +404,6 @@ async def cuenta(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             cursos_count = f"{len(client.get_courses())} asignaturas"
         except Exception:
             cursos_count = "No disponible"
-        finally:
-            client.logout()
 
     text = (
         "👤 <b>MI CUENTA AKUMAJA</b>\n"

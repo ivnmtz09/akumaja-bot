@@ -130,6 +130,9 @@ def _reset_dedup(chat_id):
 def logout_user(chat_id):
     """Elimina la cuenta del usuario (contraseña cifrada incluida)."""
     db.delete_user(chat_id)
+    if chat_id in _client_cache:
+        _client_cache[chat_id].logout()
+        del _client_cache[chat_id]
 
 
 def account_status(chat_id):
@@ -149,8 +152,10 @@ def account_status(chat_id):
     }
 
 
+_client_cache = {}
+
 def get_client_for(chat_id):
-    """Construye un MoodleClient descifrando la credencial del usuario."""
+    """Construye o recupera un MoodleClient descifrando la credencial del usuario."""
     user = db.get_user_by_chat_id(chat_id)
     if not user:
         return None
@@ -159,12 +164,18 @@ def get_client_for(chat_id):
     if not instance:
         return None
 
+    cached = _client_cache.get(chat_id)
+    if cached and cached.username == user["moodle_username"]:
+        return cached
+
     try:
         password = security.decrypt(user["moodle_password_encrypted"])
     except RuntimeError:
         return None
 
-    return MoodleClient(instance.base_url, user["moodle_username"], password)
+    client = MoodleClient(instance.base_url, user["moodle_username"], password)
+    _client_cache[chat_id] = client
+    return client
 
 
 # ---------------------------------------------------------------------------

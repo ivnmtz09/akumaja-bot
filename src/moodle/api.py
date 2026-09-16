@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import time
+import random
 import requests
 import cloudscraper
 from bs4 import BeautifulSoup
@@ -39,6 +40,7 @@ def login(moodle_url=None, username=None, password=None):
     password = password or PASSWORD
 
     session = cloudscraper.create_scraper(
+        delay=10,
         browser={
             'browser': 'chrome',
             'platform': 'windows',
@@ -48,8 +50,13 @@ def login(moodle_url=None, username=None, password=None):
 
     login_url = f"{moodle_url}/login/index.php"
 
-    response = session.get(login_url, timeout=30)
-    response.raise_for_status()
+    try:
+        response = session.get(login_url, timeout=30)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code in (403, 503):
+            raise RuntimeError("El firewall bloqueó la conexión al iniciar sesión. Intenta de nuevo más tarde.")
+        raise
 
     soup = BeautifulSoup(response.text, "html.parser")
     token_input = soup.find("input", {"name": "logintoken"})
@@ -116,7 +123,12 @@ def call_ajax(session, sesskey, method, args, moodle_url=None):
         },
         timeout=30,
     )
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code in (403, 503):
+            raise RuntimeError("El firewall bloqueó la petición AJAX. Intenta de nuevo más tarde.")
+        raise
 
     result = response.json()
     if not isinstance(result, list) or not result:
@@ -251,7 +263,9 @@ def get_recent_activity(session, course_ids=None, days_back=7, moodle_url=None):
     cutoff = now - (days_back * 86400)
 
     activity = []
-    for course_id in course_ids[:5]:  # Limitar a 5 cursos para no sobrecargar
+    import time
+    for course_id in course_ids:
+        time.sleep(random.uniform(0.5, 1.5))
         try:
             data = call_ajax(
                 session,

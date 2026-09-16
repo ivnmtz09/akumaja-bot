@@ -12,10 +12,10 @@ import re
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-# Líneas separadoras Unicode de alta compatibilidad visual
-LINE_DOUBLE = "═══════════════════════════════════"
-LINE_LIGHT = "───────────────────────────────────"
-LINE_HEAVY = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+# Separadores minimalistas
+LINE_DOUBLE = "======================="
+LINE_LIGHT = "-----------------------"
+LINE_HEAVY = "━━━━━━━━━━━━━━━━━━━━━━━"
 
 
 def safe_escape(text: str) -> str:

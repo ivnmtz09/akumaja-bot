@@ -6,6 +6,7 @@ afecta a los demás.
 """
 
 import logging
+import random
 import time
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions
@@ -42,12 +43,11 @@ async def collect_notifications_for_users(telegram_bot):
             if notifications:
                 total_sent += await _send_notifications(telegram_bot, chat_id, notifications)
             db.update_last_sync(chat_id)
-            client.logout()
             logger.info("Monitor: %s → %d notificación(es)", chat_id, len(notifications))
         except Exception as exc:
             logger.error("Monitor: error para %s: %s", chat_id, exc)
 
-        time.sleep(3)
+        time.sleep(random.uniform(5, 12))
 
     return total_sent
 
