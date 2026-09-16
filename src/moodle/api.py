@@ -38,7 +38,13 @@ def login(moodle_url=None, username=None, password=None):
     username = username or USERNAME
     password = password or PASSWORD
 
-    session = cloudscraper.create_scraper()
+    session = cloudscraper.create_scraper(
+        browser={
+            'browser': 'chrome',
+            'platform': 'windows',
+            'desktop': True
+        }
+    )
 
     login_url = f"{moodle_url}/login/index.php"
 
