@@ -9,6 +9,9 @@ import os
 import re
 import sys
 import time
+import requests
+import cloudscraper
+from bs4 import BeautifulSoup
 from datetime import datetime
 from html import escape
 from pathlib import Path
@@ -34,15 +37,7 @@ def login(moodle_url=None, username=None, password=None):
     username = username or USERNAME
     password = password or PASSWORD
 
-    session = requests.Session()
-    session.headers.update({
-        "User-Agent": (
-            "Mozilla/5.0 (X11; Linux x86_64) "
-            "AppleWebKit/537.36 "
-            "(KHTML, like Gecko) "
-            "Chrome/151.0.0.0 Safari/537.36"
-        )
-    })
+    session = cloudscraper.create_scraper()
 
     login_url = f"{moodle_url}/login/index.php"
 
