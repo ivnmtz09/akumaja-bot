@@ -67,7 +67,8 @@ def format_urgency(timestart: float):
     elif hours_left < 72:
         days = int(hours_left // 24)
         rem_h = int(hours_left % 24)
-        badge = "🟠 <b>PRÓXIMO — EN 3 DÍAS</b>"
+        badge_text = f"EN {days} DÍA{'S' if days > 1 else ''}" if days > 0 else "EN MENOS DE UN DÍA"
+        badge = f"🟠 <b>PRÓXIMO — {badge_text}</b>"
         time_str = f"Quedan {days}d {rem_h}h"
         icon = "⏳"
     else:

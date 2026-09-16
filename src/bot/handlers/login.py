@@ -234,5 +234,6 @@ def get_login_handler() -> ConversationHandler:
             LOGIN_PASSWORD: [MessageHandler(filters.TEXT & ~filters.COMMAND, login_password)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
-        allow_reentry=True,
+        per_message=False,
+        allow_reentry=True, per_message=False,
     )

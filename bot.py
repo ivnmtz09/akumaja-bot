@@ -107,8 +107,15 @@ def main() -> None:
     db.init_db()
     run_legacy_migration()
 
-    # Construir aplicación
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+    # Construir aplicación con timeouts aumentados para evitar TimedOut
+    app = (
+        Application.builder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .connect_timeout(30.0)
+        .read_timeout(30.0)
+        .write_timeout(30.0)
+        .build()
+    )
 
     # Registrar comandos generales
     app.add_handler(CommandHandler("start", start))
