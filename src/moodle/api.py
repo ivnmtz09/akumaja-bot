@@ -42,7 +42,7 @@ def login(moodle_url=None, username=None, password=None):
     session = cloudscraper.create_scraper(
         delay=10,
         browser={
-            'browser': 'chrome',
+            'browser': 'firefox',
             'platform': 'windows',
             'desktop': True
         }
