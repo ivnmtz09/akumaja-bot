@@ -137,7 +137,8 @@ class TestSecurity:
 # ---------------------------------------------------------------------------
 
 class FakeClient:
-    def __init__(self, base_url=None, username=None, password=None, *, should_fail=False):
+    def __init__(self, base_url=None, username=None, password=None, *, cache_key=None, should_fail=False):
+        self.username = username
         self.should_fail = should_fail
         self.logout_called = False
         self.courses = [

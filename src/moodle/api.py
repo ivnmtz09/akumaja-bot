@@ -33,11 +33,31 @@ from src.services.notifications import (
 _sent_notifications_file = get_sent_notifications_file
 
 
-def login(moodle_url=None, username=None, password=None):
-    """Inicia sesión en Moodle y retorna una sesión HTTP con cookies autenticadas."""
-    moodle_url = moodle_url or MOODLE_URL
-    username = username or USERNAME
-    password = password or PASSWORD
+# ---------------------------------------------------------------------------
+# Caché de sesiones autenticadas por usuario.
+# Clave: cache_key (username de Moodle o Telegram chat_id).
+# Valor: objeto cloudscraper autenticado.
+# ---------------------------------------------------------------------------
+_sessions_cache: dict = {}
+
+
+def login(moodle_url=None, username=None, password=None, *, cache_key=None):
+    """Inicia sesión en Moodle y retorna una sesión HTTP con cookies autenticadas.
+
+    Si se proporciona ``cache_key`` y ya existe una sesión cacheada para esa
+    clave, se retorna directamente sin volver a autenticar.
+
+    El fallback a las variables de entorno (.env) SÓLO ocurre cuando los
+    parámetros son ``None`` (no se proporcionan). Si se pasan cadenas vacías
+    se lanzará error, nunca se usarán credenciales ajenas.
+    """
+    moodle_url = moodle_url if moodle_url is not None else MOODLE_URL
+    username = username if username is not None else USERNAME
+    password = password if password is not None else PASSWORD
+
+    # Verificar sesión en caché
+    if cache_key is not None and cache_key in _sessions_cache:
+        return _sessions_cache[cache_key]
 
     session = cloudscraper.create_scraper(
         delay=10,
@@ -81,7 +101,36 @@ def login(moodle_url=None, username=None, password=None):
     if "/login/" in response.url:
         raise RuntimeError("El login no parece haber sido exitoso.")
 
+    # Guardar en caché si se proporcionó clave
+    if cache_key is not None:
+        _sessions_cache[cache_key] = session
+
     return session
+
+
+def invalidate_session(cache_key):
+    """Elimina la sesión de un usuario específico del caché.
+
+    Debe llamarse cuando la sesión expira (403, sesskey ausente, etc.)
+    para forzar un re-login limpio en la próxima petición.
+    """
+    cached = _sessions_cache.pop(cache_key, None)
+    if cached is not None:
+        try:
+            cached.close()
+        except Exception:
+            pass
+
+
+def _is_session_expired(error):
+    """Detecta si un error indica sesión expirada o bloqueada."""
+    msg = str(error).lower()
+    return any(kw in msg for kw in (
+        "firewall bloqueó",
+        "sesskey",
+        "403",
+        "login",
+    ))
 
 
 # Alias para variables globales si eran referenciadas

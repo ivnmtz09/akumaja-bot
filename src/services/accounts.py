@@ -173,7 +173,10 @@ def get_client_for(chat_id):
     except RuntimeError:
         return None
 
-    client = MoodleClient(instance.base_url, user["moodle_username"], password)
+    client = MoodleClient(
+        instance.base_url, user["moodle_username"], password,
+        cache_key=str(chat_id),
+    )
     _client_cache[chat_id] = client
     return client
 
