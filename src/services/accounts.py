@@ -175,7 +175,6 @@ def get_client_for(chat_id):
 
     client = MoodleClient(
         instance.base_url, user["moodle_username"], password,
-        cache_key=str(chat_id),
     )
     _client_cache[chat_id] = client
     return client

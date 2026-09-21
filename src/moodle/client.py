@@ -1,9 +1,8 @@
 """Cliente Moodle por usuario: envuelve src.moodle.api con sesión propia.
 
 Cada usuario tiene su propia sesión HTTP aislada en el diccionario
-``api._sessions_cache``, usando ``cache_key`` (normalmente el
-``telegram_chat_id``) como clave.  Nunca se comparte una sesión entre
-usuarios distintos.
+``api._sessions_cache``, usando el ``username`` de Moodle como clave.
+Nunca se comparte una sesión entre usuarios distintos.
 
 Si una sesión expira (403, sesskey ausente, cookie muerta), el cliente
 la invalida del caché y vuelve a iniciar sesión de forma silenciosa
@@ -28,16 +27,15 @@ class MoodleClient:
         Usuario Moodle (credencial desencriptada).
     password : str
         Contraseña Moodle (credencial desencriptada).
-    cache_key : str | None
-        Clave para el caché de sesiones (``telegram_chat_id`` o
-        ``moodle_username``).  Si es ``None`` se usa ``username``.
+
+    El caché de sesiones en ``api._sessions_cache`` se indexa por
+    ``username``, garantizando aislamiento total entre estudiantes.
     """
 
-    def __init__(self, base_url, username, password, *, cache_key=None):
+    def __init__(self, base_url, username, password):
         self.base_url = base_url
         self.username = username
         self.password = password
-        self._cache_key = cache_key if cache_key is not None else username
 
     # ---- sesión --------------------------------------------------------
 
@@ -48,12 +46,11 @@ class MoodleClient:
             moodle_url=self.base_url,
             username=self.username,
             password=self.password,
-            cache_key=self._cache_key,
         )
 
     def _invalidate(self):
         """Elimina la sesión de este usuario del caché global."""
-        moodle_api.invalidate_session(self._cache_key)
+        moodle_api.invalidate_session(self.username)
 
     # ---- retry transparente -------------------------------------------
 
@@ -70,7 +67,7 @@ class MoodleClient:
             if moodle_api._is_session_expired(exc):
                 logger.warning(
                     "Sesión expirada para %s (%s), re-autenticando...",
-                    self._cache_key, exc,
+                    self.username, exc,
                 )
                 self._invalidate()
                 # Segundo intento con sesión fresca; si falla, se propaga.

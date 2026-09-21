@@ -35,29 +35,39 @@ _sent_notifications_file = get_sent_notifications_file
 
 # ---------------------------------------------------------------------------
 # Caché de sesiones autenticadas por usuario.
-# Clave: cache_key (username de Moodle o Telegram chat_id).
+# Clave: username de Moodle (garantiza aislamiento entre estudiantes).
 # Valor: objeto cloudscraper autenticado.
 # ---------------------------------------------------------------------------
 _sessions_cache: dict = {}
 
 
-def login(moodle_url=None, username=None, password=None, *, cache_key=None):
+def login(moodle_url=None, username=None, password=None):
     """Inicia sesión en Moodle y retorna una sesión HTTP con cookies autenticadas.
 
-    Si se proporciona ``cache_key`` y ya existe una sesión cacheada para esa
-    clave, se retorna directamente sin volver a autenticar.
+    Usa ``username`` como clave del caché de sesiones.  Si ya existe una
+    sesión cacheada para ese usuario, se retorna directamente.
 
-    El fallback a las variables de entorno (.env) SÓLO ocurre cuando los
-    parámetros son ``None`` (no se proporcionan). Si se pasan cadenas vacías
-    se lanzará error, nunca se usarán credenciales ajenas.
+    **No** existe fallback a variables de entorno.  Si ``username`` o
+    ``password`` son ``None`` o cadenas vacías se lanza ``ValueError``
+    para evitar fugas de credenciales entre usuarios.
     """
     moodle_url = moodle_url if moodle_url is not None else MOODLE_URL
-    username = username if username is not None else USERNAME
-    password = password if password is not None else PASSWORD
 
-    # Verificar sesión en caché
-    if cache_key is not None and cache_key in _sessions_cache:
-        return _sessions_cache[cache_key]
+    # ── Validación estricta de credenciales ──────────────────────────
+    if not username:
+        raise ValueError(
+            "Credenciales faltantes: 'username' es obligatorio para login. "
+            "Proporciona las credenciales desencriptadas del usuario."
+        )
+    if not password:
+        raise ValueError(
+            "Credenciales faltantes: 'password' es obligatorio para login. "
+            "Proporciona las credenciales desencriptadas del usuario."
+        )
+
+    # ── Verificar sesión en caché (clave = username) ─────────────────
+    if username in _sessions_cache:
+        return _sessions_cache[username]
 
     session = cloudscraper.create_scraper(
         delay=10,
@@ -101,20 +111,20 @@ def login(moodle_url=None, username=None, password=None, *, cache_key=None):
     if "/login/" in response.url:
         raise RuntimeError("El login no parece haber sido exitoso.")
 
-    # Guardar en caché si se proporcionó clave
-    if cache_key is not None:
-        _sessions_cache[cache_key] = session
+    # Guardar en caché usando username como clave
+    _sessions_cache[username] = session
 
     return session
 
 
-def invalidate_session(cache_key):
+def invalidate_session(username):
     """Elimina la sesión de un usuario específico del caché.
 
+    La clave del caché es el ``username`` de Moodle.
     Debe llamarse cuando la sesión expira (403, sesskey ausente, etc.)
     para forzar un re-login limpio en la próxima petición.
     """
-    cached = _sessions_cache.pop(cache_key, None)
+    cached = _sessions_cache.pop(username, None)
     if cached is not None:
         try:
             cached.close()
@@ -133,9 +143,6 @@ def _is_session_expired(error):
     ))
 
 
-# Alias para variables globales si eran referenciadas
-USERNAME = MOODLE_USERNAME
-PASSWORD = MOODLE_PASSWORD
 
 
 def get_sesskey(session, moodle_url=None):
@@ -484,15 +491,19 @@ def main():
         print("❌ Falta MOODLE_URL en .env")
         sys.exit(1)
 
-    if not USERNAME:
+    if not MOODLE_USERNAME:
         print("❌ Falta MOODLE_USERNAME en .env")
         sys.exit(1)
 
-    if not PASSWORD:
+    if not MOODLE_PASSWORD:
         print("❌ Falta MOODLE_PASSWORD en .env")
         sys.exit(1)
 
-    session = login()
+    session = login(
+        moodle_url=MOODLE_URL,
+        username=MOODLE_USERNAME,
+        password=MOODLE_PASSWORD,
+    )
 
     try:
         courses = get_courses(session)
