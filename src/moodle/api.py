@@ -193,6 +193,8 @@ def call_ajax(session, sesskey, method, args, moodle_url=None):
     first = result[0]
     if first.get("error"):
         msg = first.get("message", "Error desconocido")
+        import logging
+        logging.error(f"Status HTTP: {response.status_code} - Respuesta cruda: {response.text}")
         raise RuntimeError(f"Error del servicio AJAX: {msg}")
 
     return first["data"]
