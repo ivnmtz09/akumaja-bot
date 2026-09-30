@@ -36,6 +36,7 @@ class MoodleClient:
         self.base_url = base_url
         self.username = username
         self.password = password
+        self.sesskey = None
 
     # ---- sesión --------------------------------------------------------
 
@@ -62,6 +63,9 @@ class MoodleClient:
         la sesión, se obtiene una nueva y se reintenta **una sola vez**.
         """
         try:
+            # Inject sesskey in kwargs if it was previously set and is expected
+            if self.sesskey and 'sesskey' in kwargs:
+                kwargs['sesskey'] = self.sesskey
             return api_fn(self.session, *args, **kwargs)
         except (RuntimeError, Exception) as exc:
             if moodle_api._is_session_expired(exc):
@@ -70,8 +74,18 @@ class MoodleClient:
                     self.username, exc,
                 )
                 self._invalidate()
+                
+                # Obtener sesión fresca
+                new_session = self.session
+                # Extraer y guardar nuevo sesskey
+                self.sesskey = moodle_api.get_sesskey(new_session, self.base_url)
+                
+                # Actualizar sesskey en kwargs si la llamada original lo usaba
+                if 'sesskey' in kwargs:
+                    kwargs['sesskey'] = self.sesskey
+                
                 # Segundo intento con sesión fresca; si falla, se propaga.
-                return api_fn(self.session, *args, **kwargs)
+                return api_fn(new_session, *args, **kwargs)
             raise
 
     # ---- API de alto nivel -------------------------------------------
