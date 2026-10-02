@@ -117,6 +117,11 @@ def login(moodle_url=None, username=None, password=None):
     return session
 
 
+class SessionExpiredError(Exception):
+    """Lanzada cuando la sesión de Moodle ha expirado o requiere re-autenticación."""
+    pass
+
+
 def invalidate_session(username):
     """Elimina la sesión de un usuario específico del caché.
 
@@ -134,26 +139,40 @@ def invalidate_session(username):
 
 def _is_session_expired(error):
     """Detecta si un error indica sesión expirada o bloqueada."""
+    if isinstance(error, SessionExpiredError):
+        return True
     msg = str(error).lower()
     return any(kw in msg for kw in (
         "firewall bloqueó",
         "sesskey",
         "403",
         "login",
+        "servicerequireslogin",
+        "sessionexpirederror",
     ))
-
-
 
 
 def get_sesskey(session, moodle_url=None):
     """Obtiene la clave de sesión (sesskey) de Moodle."""
     moodle_url = moodle_url or MOODLE_URL
-    response = session.get(f"{moodle_url}/my/courses.php", timeout=30)
-    response.raise_for_status()
+    try:
+        response = session.get(f"{moodle_url}/my/courses.php", timeout=30)
+        if response.status_code == 403:
+            raise SessionExpiredError("HTTP 403 al obtener sesskey: sesión expirada")
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 403:
+            raise SessionExpiredError("HTTP 403 al obtener sesskey: sesión expirada")
+        if e.response.status_code == 503:
+            raise RuntimeError("El firewall bloqueó la conexión al obtener sesskey. Intenta de nuevo más tarde.")
+        raise
+
+    if "/login/" in response.url:
+        raise SessionExpiredError("Redirección al login detectada: la sesión de Moodle ha expirado.")
 
     match = re.search(r'"sesskey":"([a-zA-Z0-9]+)"', response.text)
     if not match:
-        raise RuntimeError("No se encontró sesskey en la página.")
+        raise SessionExpiredError("No se encontró sesskey en la página (posible sesión expirada).")
     return match.group(1)
 
 
@@ -179,19 +198,38 @@ def call_ajax(session, sesskey, method, args, moodle_url=None):
         },
         timeout=30,
     )
+    if response.status_code == 403:
+        raise SessionExpiredError("HTTP 403 al llamar servicio AJAX: sesión expirada.")
+
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code in (403, 503):
+        if e.response.status_code == 403:
+            raise SessionExpiredError("HTTP 403 al llamar servicio AJAX: sesión expirada.")
+        if e.response.status_code == 503:
             raise RuntimeError("El firewall bloqueó la petición AJAX. Intenta de nuevo más tarde.")
         raise
 
-    result = response.json()
+    try:
+        result = response.json()
+    except Exception as exc:
+        raise RuntimeError(f"Error decodificando respuesta JSON de AJAX: {exc}")
+
     if not isinstance(result, list) or not result:
         raise RuntimeError(f"Respuesta inesperada del servicio AJAX: {result}")
 
     first = result[0]
-    if first.get("error"):
+    if isinstance(first, dict) and first.get("error"):
+        exception_info = first.get("exception")
+        errorcode = ""
+        if isinstance(exception_info, dict):
+            errorcode = str(exception_info.get("errorcode", "")).strip().lower()
+        if not errorcode:
+            errorcode = str(first.get("errorcode", "")).strip().lower()
+
+        if errorcode == "servicerequireslogin":
+            raise SessionExpiredError("Sesión de Moodle expirada: servicerequireslogin.")
+
         msg = first.get("message", "Error desconocido")
         import logging
         logging.error(f"Status HTTP: {response.status_code} - Respuesta cruda: {response.text}")
@@ -200,10 +238,10 @@ def call_ajax(session, sesskey, method, args, moodle_url=None):
     return first["data"]
 
 
-def get_courses(session, moodle_url=None):
+def get_courses(session, moodle_url=None, sesskey=None):
     """Obtiene los cursos inscritos del usuario vía AJAX."""
     moodle_url = moodle_url or MOODLE_URL
-    sesskey = get_sesskey(session, moodle_url)
+    sesskey = sesskey or get_sesskey(session, moodle_url)
 
     data = call_ajax(
         session,
@@ -235,10 +273,10 @@ def get_courses(session, moodle_url=None):
     return result
 
 
-def get_upcoming_events(session, days_ahead=30, moodle_url=None):
+def get_upcoming_events(session, days_ahead=30, moodle_url=None, sesskey=None):
     """Obtiene eventos/actividades próximas (entregas, exámenes, etc.)."""
     moodle_url = moodle_url or MOODLE_URL
-    sesskey = get_sesskey(session, moodle_url)
+    sesskey = sesskey or get_sesskey(session, moodle_url)
 
     data = call_ajax(
         session,
@@ -273,10 +311,10 @@ def get_upcoming_events(session, days_ahead=30, moodle_url=None):
     return upcoming
 
 
-def get_all_calendar_events(session, moodle_url=None):
+def get_all_calendar_events(session, moodle_url=None, sesskey=None):
     """Obtiene todos los eventos del calendario (pasados y futuros)."""
     moodle_url = moodle_url or MOODLE_URL
-    sesskey = get_sesskey(session, moodle_url)
+    sesskey = sesskey or get_sesskey(session, moodle_url)
 
     data = call_ajax(
         session,
@@ -310,13 +348,13 @@ def get_all_calendar_events(session, moodle_url=None):
     return all_events
 
 
-def get_recent_activity(session, course_ids=None, days_back=7, moodle_url=None):
+def get_recent_activity(session, course_ids=None, days_back=7, moodle_url=None, sesskey=None):
     """Obtiene actividad reciente de los cursos (foros, recursos nuevos, etc.)."""
     moodle_url = moodle_url or MOODLE_URL
     if not course_ids:
         return []
 
-    sesskey = get_sesskey(session, moodle_url)
+    sesskey = sesskey or get_sesskey(session, moodle_url)
     now = datetime.now().timestamp()
     cutoff = now - (days_back * 86400)
 
@@ -354,13 +392,14 @@ def get_recent_activity(session, course_ids=None, days_back=7, moodle_url=None):
     return activity[:20]
 
 
-def get_notifications_summary(session, moodle_url=None):
+def get_notifications_summary(session, moodle_url=None, sesskey=None):
     """Resumen combinado: próximos vencimientos + actividad reciente."""
     moodle_url = moodle_url or MOODLE_URL
-    events = get_upcoming_events(session, days_ahead=30, moodle_url=moodle_url)
-    courses = get_courses(session, moodle_url=moodle_url)
+    sesskey = sesskey or get_sesskey(session, moodle_url)
+    events = get_upcoming_events(session, days_ahead=30, moodle_url=moodle_url, sesskey=sesskey)
+    courses = get_courses(session, moodle_url=moodle_url, sesskey=sesskey)
     course_ids = [c["id"] for c in courses]
-    activity = get_recent_activity(session, course_ids, days_back=7, moodle_url=moodle_url)
+    activity = get_recent_activity(session, course_ids, days_back=7, moodle_url=moodle_url, sesskey=sesskey)
 
     return {
         "upcoming_events": events,
@@ -401,15 +440,16 @@ def _clean_event_name(raw_name: str) -> str:
     return name
 
 
-def check_new_notifications(session, moodle_url=None, user_id=None):
+def check_new_notifications(session, moodle_url=None, user_id=None, sesskey=None):
     """Verifica notificaciones nuevas con deduplicación por usuario."""
     moodle_url = moodle_url or MOODLE_URL
+    sesskey = sesskey or get_sesskey(session, moodle_url)
     sent = load_sent_notifications(user_id=user_id)
     now_ts = int(time.time())
     new_notifications = []
 
     # 1. Eventos de calendario próximos (próximas 24h)
-    events = get_upcoming_events(session, days_ahead=1, moodle_url=moodle_url)
+    events = get_upcoming_events(session, days_ahead=1, moodle_url=moodle_url, sesskey=sesskey)
     for e in events:
         event_id = f"cal_{e['course_id']}_{e['timestart']}_{e['name'][:30]}"
         if event_id not in sent:

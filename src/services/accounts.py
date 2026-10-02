@@ -102,6 +102,7 @@ def perform_login(chat_id, instance_id, username, password):
 
     password_encrypted = security.encrypt(password)
     db.upsert_user(chat_id, instance_id, username, password_encrypted)
+    _client_cache.pop(chat_id, None)
     return instance
 
 
@@ -115,6 +116,7 @@ def apply_faculty_change(chat_id, instance_id, username, password):
     password_encrypted = security.encrypt(password)
     db.update_user_faculty(chat_id, instance_id, username, password_encrypted)
     _reset_dedup(chat_id)
+    _client_cache.pop(chat_id, None)
 
 
 def _reset_dedup(chat_id):
@@ -165,7 +167,7 @@ def get_client_for(chat_id):
         return None
 
     cached = _client_cache.get(chat_id)
-    if cached and cached.username == user["moodle_username"]:
+    if cached and cached.username == user["moodle_username"] and cached.base_url == instance.base_url:
         return cached
 
     try:
